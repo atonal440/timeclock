@@ -1,7 +1,7 @@
 const CACHE = 'timeclock-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
+  '/timeclock/',
+  '/timeclock/index.html',
   'https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
