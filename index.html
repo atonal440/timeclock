@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#080b12"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="TimeClock"/>
+<title>TimeClock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: #080b12; }
+#root { height: 100%; }
+:root {
+  --bg: #080b12;
+  --surface: #10141e;
+  --surface2: #161b28;
+  --border: #1e2535;
+  --lime: #a3e635;
+  --lime-dim: #4a6e12;
+  --amber: #f59e0b;
+  --text: #e8edf5;
+  --muted: #5a6480;
+  --danger: #ef4444;
+  --mono: 'Azeret Mono', monospace;
+  --ui: 'Outfit', sans-serif;
+}
+.app { font-family: var(--ui); background: var(--bg); min-height: 100vh; min-height: -webkit-fill-available; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; color: var(--text); position: relative; overflow: hidden; }
+.header { padding: 20px 20px 0; padding-top: max(20px, env(safe-area-inset-top)); }
+.time-display { font-family: var(--mono); font-size: 52px; font-weight: 700; letter-spacing: -2px; line-height: 1; color: var(--text); transition: color 0.3s; }
+.time-display.clocked-in { color: var(--lime); text-shadow: 0 0 30px rgba(163,230,53,0.3); }
+.date-line { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+.status-bar { margin: 16px 20px 0; padding: 12px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: border-color 0.3s, background 0.3s; }
+.status-bar.active { border-color: var(--lime-dim); background: rgba(163,230,53,0.05); }
+.status-left { display: flex; flex-direction: column; gap: 2px; }
+.status-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.status-account { font-family: var(--mono); font-size: 14px; color: var(--lime); }
+.status-idle { font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.running-time { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--lime); }
+.clock-out-btn { padding: 8px 16px; border-radius: 7px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-family: var(--ui); font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; }
+.clock-out-btn:hover { background: rgba(239,68,68,0.25); }
+.content { flex: 1; overflow-y: auto; padding: 16px 20px 100px; }
+.section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 10px; padding-left: 2px; }
+.project-grid { display: flex; flex-direction: column; gap: 8px; }
+.project-btn { width: 100%; padding: 16px 20px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; text-align: left; transition: all 0.15s; display: flex; justify-content: space-between; align-items: center; }
+.project-btn:hover { background: var(--surface2); border-color: #2a3147; }
+.project-btn.current { background: rgba(163,230,53,0.08); border-color: var(--lime-dim); pointer-events: none; }
+.project-btn:active { transform: scale(0.98); }
+.project-name { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--text); }
+.project-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.project-badge { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 20px; background: rgba(163,230,53,0.15); color: var(--lime); border: 1px solid rgba(163,230,53,0.2); white-space: nowrap; }
+.tap-hint { font-size: 11px; color: var(--muted); text-align: center; padding: 20px 0 0; font-style: italic; }
+.flash-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0; }
+.flash-overlay.in { animation: flashAnim 0.6s ease-out forwards; background: rgba(163,230,53,0.12); }
+.flash-overlay.out { animation: flashAnim 0.6s ease-out forwards; background: rgba(239,68,68,0.08); }
+@keyframes flashAnim { 0% { opacity:1; } 100% { opacity:0; } }
+.day-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.day-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+.day-date { font-size: 13px; font-weight: 600; color: var(--text); }
+.day-total { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--amber); }
+.day-rows { padding: 8px 0; }
+.day-row { padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+.day-row-account { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.day-row-dur { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
+.empty-state { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 14px; line-height: 1.7; }
+.empty-state .icon { display: block; font-size: 32px; margin-bottom: 12px; }
+.settings-section { margin-bottom: 28px; }
+.project-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
+.project-item-name { font-family: var(--mono); font-size: 13px; color: var(--text); }
+.remove-btn { padding: 4px 10px; border-radius: 5px; background: transparent; border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-size: 12px; cursor: pointer; font-family: var(--ui); }
+.remove-btn:hover { background: rgba(239,68,68,0.1); }
+.add-row { display: flex; gap: 8px; margin-top: 8px; }
+.add-input { flex: 1; padding: 11px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; transition: border-color 0.15s; }
+.add-input:focus { border-color: #2a3147; }
+.add-input::placeholder { color: var(--muted); }
+.add-btn { padding: 11px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--lime); font-size: 18px; cursor: pointer; }
+.action-btn { width: 100%; padding: 13px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: var(--ui); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.action-btn:hover { background: var(--surface2); }
+.import-area { width: 100%; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 11px; outline: none; resize: vertical; min-height: 120px; margin-bottom: 8px; }
+.import-area::placeholder { color: var(--muted); }
+.confirm-btn { width: 100%; padding: 12px; border-radius: 8px; background: rgba(163,230,53,0.1); border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 6px; }
+.confirm-btn:hover { background: rgba(163,230,53,0.18); }
+.cancel-btn { width: 100%; padding: 12px; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 14px; cursor: pointer; }
+.hint { font-size: 11px; color: var(--muted); line-height: 1.5; padding: 8px 0; }
+.stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.stat-row:last-child { margin-bottom: 0; }
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(8,11,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; padding: 8px 0; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+.nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; background: none; border: none; cursor: pointer; color: var(--muted); transition: color 0.15s; }
+.nav-btn.active { color: var(--lime); }
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-family: var(--ui); font-weight: 500; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+const { useState, useEffect, useCallback } = React;
+
+// ── LocalStorage helpers ─────────────────────────────────────────
+function loadData(key, fallback) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function saveData(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+
+// ── Timeclock format ─────────────────────────────────────────────
+function formatTC(date) {
+  const d = new Date(date);
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+function parseTimeclockFile(content) {
+  const entries = [];
+  for (const line of content.trim().split('\n')) {
+    const t = line.trim();
+    if (!t) continue;
+    const p = t.split(/\s+/);
+    if (p[0] === 'i' && p.length >= 4) {
+      const dt = new Date(`${p[1].replace(/\//g,'-')}T${p[2]}`);
+      if (!isNaN(dt)) entries.push({ type:'i', datetime:dt.toISOString(), account:p.slice(3).join(' ') });
+    } else if (p[0] === 'o' && p.length >= 3) {
+      const dt = new Date(`${p[1].replace(/\//g,'-')}T${p[2]}`);
+      if (!isNaN(dt)) entries.push({ type:'o', datetime:dt.toISOString() });
+    }
+  }
+  return entries;
+}
+
+function exportTimeclock(entries) {
+  return entries.map(e =>
+    e.type === 'i' ? `i ${formatTC(e.datetime)} ${e.account}` : `o ${formatTC(e.datetime)}`
+  ).join('\n') + '\n';
+}
+
+function fmtDuration(ms) {
+  if (ms <= 0) return '0h 00m';
+  const m = Math.floor(ms / 60000);
+  return `${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}m`;
+}
+
+function calcDailyTotals(entries) {
+  const days = {};
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    if (e.type !== 'i') continue;
+    const next = entries[i+1];
+    if (!next || next.type !== 'o') continue;
+    const ms = new Date(next.datetime) - new Date(e.datetime);
+    const dk = new Date(e.datetime).toLocaleDateString('en-CA');
+    if (!days[dk]) days[dk] = { date:dk, totalMs:0, byAccount:{} };
+    days[dk].totalMs += ms;
+    days[dk].byAccount[e.account] = (days[dk].byAccount[e.account]||0) + ms;
+  }
+  return Object.values(days).sort((a,b) => b.date.localeCompare(a.date));
+}
+
+function fmtDate(dateStr) {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
+// ── App ──────────────────────────────────────────────────────────
+function App() {
+  const [entries, setEntries] = useState(() => loadData('tc-entries', []));
+  const [projects, setProjects] = useState(() => loadData('tc-projects', []));
+  const [tab, setTab] = useState('clock');
+  const [now, setNow] = useState(new Date());
+  const [newProject, setNewProject] = useState('');
+  const [importText, setImportText] = useState('');
+  const [showImport, setShowImport] = useState(false);
+  const [flash, setFlash] = useState(null);
+
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => { saveData('tc-entries', entries); }, [entries]);
+  useEffect(() => { saveData('tc-projects', projects); }, [projects]);
+
+  const lastEntry = entries[entries.length - 1];
+  const isClockedIn = lastEntry?.type === 'i';
+  const currentAccount = isClockedIn ? lastEntry.account : null;
+  const runningMs = isClockedIn ? now - new Date(lastEntry.datetime) : 0;
+  const dailyTotals = calcDailyTotals(entries);
+  const todayKey = now.toLocaleDateString('en-CA');
+  const todayTotals = dailyTotals.find(d => d.date === todayKey);
+
+  function triggerFlash(type) {
+    setFlash(null);
+    requestAnimationFrame(() => { setFlash(type); setTimeout(() => setFlash(null), 700); });
+  }
+
+  function clockIn(account) {
+    if (isClockedIn) {
+      // Clock out of current, then in to new
+      const now2 = new Date().toISOString();
+      setEntries(p => [...p, { type:'o', datetime:now2 }, { type:'i', datetime:new Date().toISOString(), account }]);
+    } else {
+      setEntries(p => [...p, { type:'i', datetime:new Date().toISOString(), account }]);
+    }
+    triggerFlash('in');
+  }
+
+  function clockOut() {
+    setEntries(p => [...p, { type:'o', datetime:new Date().toISOString() }]);
+    triggerFlash('out');
+  }
+
+  function doImport() {
+    try {
+      const parsed = parseTimeclockFile(importText);
+      if (!parsed.length) { alert('No valid entries found.'); return; }
+      setEntries(prev => {
+        const existing = new Set(prev.map(e => e.datetime+e.type));
+        const merged = [...prev, ...parsed.filter(e => !existing.has(e.datetime+e.type))]
+          .sort((a,b) => a.datetime.localeCompare(b.datetime));
+        return merged;
+      });
+      const accs = parsed.filter(e => e.type==='i').map(e => e.account);
+      setProjects(prev => Array.from(new Set([...prev, ...accs])));
+      setImportText(''); setShowImport(false);
+      alert(`Imported ${parsed.length} entries.`);
+    } catch(e) { alert('Parse error: '+e.message); }
+  }
+
+  function doExport() {
+    const blob = new Blob([exportTimeclock(entries)], { type:'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='timeclock.journal'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function addProject() {
+    const p = newProject.trim();
+    if (!p || projects.includes(p)) return;
+    setProjects(prev => [...prev, p]);
+    setNewProject('');
+  }
+
+  const timeStr = now.toLocaleTimeString('en-US', { hour12:false });
+  const dateStr = now.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+
+  return React.createElement('div', { className:'app' },
+    flash && React.createElement('div', { className:`flash-overlay ${flash}`, key:Date.now() }),
+
+    // Header
+    React.createElement('div', { className:'header' },
+      React.createElement('div', { className:`time-display ${isClockedIn?'clocked-in':''}` }, timeStr),
+      React.createElement('div', { className:'date-line' }, dateStr)
+    ),
+
+    // Status bar
+    React.createElement('div', { className:`status-bar ${isClockedIn?'active':''}` },
+      React.createElement('div', { className:'status-left' },
+        React.createElement('div', { className:'status-label' }, isClockedIn ? 'Clocked in' : 'Status'),
+        isClockedIn
+          ? React.createElement('div', { className:'status-account' }, currentAccount)
+          : React.createElement('div', { className:'status-idle' }, '— idle —')
+      ),
+      isClockedIn
+        ? React.createElement(React.Fragment, null,
+            React.createElement('div', { className:'running-time' }, fmtDuration(runningMs)),
+            React.createElement('button', { className:'clock-out-btn', onClick:clockOut }, 'Clock Out')
+          )
+        : todayTotals
+          ? React.createElement('div', { style:{textAlign:'right'} },
+              React.createElement('div', { className:'status-label' }, 'Today'),
+              React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'18px',color:'var(--amber)',fontWeight:'600'} }, fmtDuration(todayTotals.totalMs))
+            )
+          : React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'12px',color:'var(--muted)'} }, 'No entries today')
+    ),
+
+    // Content
+    React.createElement('div', { className:'content' },
+
+      // CLOCK TAB
+      tab === 'clock' && React.createElement(React.Fragment, null,
+        React.createElement('div', { className:'section-label', style:{marginTop:4} },
+          isClockedIn ? 'Switch to' : 'Clock in to'
+        ),
+        React.createElement('div', { className:'project-grid' },
+          projects.map(p => {
+            const isCurrent = p === currentAccount;
+            const accountMs = todayTotals?.byAccount[p];
+            return React.createElement('button', {
+              key: p,
+              className: `project-btn ${isCurrent?'current':''}`,
+              onClick: () => clockIn(p)
+            },
+              React.createElement('div', null,
+                React.createElement('div', { className:'project-name' }, p)
+              ),
+              React.createElement('div', { style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6} },
+                isCurrent && React.createElement('span', { className:'project-badge' }, '● NOW'),
+                accountMs && !isCurrent && React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:'12px',color:'var(--muted)'} }, fmtDuration(accountMs)+' today')
+              )
+            );
+          })
+        ),
+        projects.length === 0 && React.createElement('div', { className:'empty-state' },
+          React.createElement('span', { className:'icon' }, '⚙️'),
+          'No projects yet. Add some in the Projects tab.'
+        ),
+        projects.length > 0 && !isClockedIn && React.createElement('div', { className:'tap-hint' }, 'Tap a project to clock in')
+      ),
+
+      // LOG TAB
+      tab === 'log' && React.createElement(React.Fragment, null,
+        React.createElement('div', { className:'section-label', style:{marginTop:4} }, 'Daily totals'),
+        dailyTotals.length === 0
+          ? React.createElement('div', { className:'empty-state' },
+              React.createElement('span', { className:'icon' }, '📋'),
+              'No entries yet. Clock in to start tracking.'
+            )
+          : dailyTotals.slice(0,60).map(day =>
+              React.createElement('div', { key:day.date, className:'day-card' },
+                React.createElement('div', { className:'day-header' },
+                  React.createElement('div', { className:'day-date' }, fmtDate(day.date)),
+                  React.createElement('div', { className:'day-total' }, fmtDuration(day.totalMs))
+                ),
+                React.createElement('div', { className:'day-rows' },
+                  Object.entries(day.byAccount)
+                    .sort((a,b)=>b[1]-a[1])
+                    .map(([acc,ms]) =>
+                      React.createElement('div', { key:acc, className:'day-row' },
+                        React.createElement('div', { className:'day-row-account' }, acc),
+                        React.createElement('div', { className:'day-row-dur' }, fmtDuration(ms))
+                      )
+                    )
+                )
+              )
+            )
+      ),
+
+      // PROJECTS TAB
+      tab === 'projects' && React.createElement(React.Fragment, null,
+        React.createElement('div', { className:'settings-section' },
+          React.createElement('div', { className:'section-label' }, 'Projects'),
+          projects.map(p =>
+            React.createElement('div', { key:p, className:'project-item' },
+              React.createElement('div', { className:'project-item-name' }, p),
+              React.createElement('button', { className:'remove-btn', onClick:()=>setProjects(prev=>prev.filter(x=>x!==p)) }, 'remove')
+            )
+          ),
+          React.createElement('div', { className:'add-row' },
+            React.createElement('input', {
+              className:'add-input',
+              value:newProject,
+              onChange:e=>setNewProject(e.target.value),
+              onKeyDown:e=>e.key==='Enter'&&addProject(),
+              placeholder:'Client:Project'
+            }),
+            React.createElement('button', { className:'add-btn', onClick:addProject }, '＋')
+          ),
+          React.createElement('div', { className:'hint' }, 'Use hledger-style names like Client:ProjectTag')
+        ),
+
+        React.createElement('div', { className:'settings-section' },
+          React.createElement('div', { className:'section-label' }, 'Data'),
+          React.createElement('button', { className:'action-btn', onClick:doExport }, '⬇︎  Export timeclock.journal'),
+          React.createElement('button', { className:'action-btn', onClick:()=>setShowImport(!showImport) }, '⬆︎  Import timeclock file'),
+          showImport && React.createElement(React.Fragment, null,
+            React.createElement('textarea', {
+              className:'import-area',
+              value:importText,
+              onChange:e=>setImportText(e.target.value),
+              placeholder:'i 2024/01/15 09:00:00 Client:Project\no 2024/01/15 17:30:00\n...'
+            }),
+            React.createElement('button', { className:'confirm-btn', onClick:doImport }, 'Import & Merge'),
+            React.createElement('button', { className:'cancel-btn', onClick:()=>{setShowImport(false);setImportText('');} }, 'Cancel')
+          ),
+          React.createElement('div', { className:'hint' },
+            'Export produces a standard hledger timeclock file. Import merges with existing data — duplicates are skipped.'
+          )
+        ),
+
+        React.createElement('div', { className:'settings-section' },
+          React.createElement('div', { className:'section-label' }, 'Stats'),
+          React.createElement('div', { style:{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'14px 16px'} },
+            React.createElement('div', { className:'stat-row' },
+              React.createElement('span', { style:{fontSize:13,color:'var(--muted)'} }, 'Total entries'),
+              React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13} }, entries.length)
+            ),
+            React.createElement('div', { className:'stat-row' },
+              React.createElement('span', { style:{fontSize:13,color:'var(--muted)'} }, 'Days logged'),
+              React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13} }, dailyTotals.length)
+            ),
+            React.createElement('div', { className:'stat-row' },
+              React.createElement('span', { style:{fontSize:13,color:'var(--muted)'} }, 'All-time hours'),
+              React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13,color:'var(--amber)'} },
+                fmtDuration(dailyTotals.reduce((a,d)=>a+d.totalMs,0))
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    // Nav
+    React.createElement('nav', { className:'nav' },
+      [['clock','⏱','Clock'],['log','📋','Log'],['projects','⚙','Projects']].map(([id,icon,label]) =>
+        React.createElement('button', {
+          key:id,
+          className:`nav-btn ${tab===id?'active':''}`,
+          onClick:()=>setTab(id)
+        },
+          React.createElement('span', { className:'nav-icon' }, icon),
+          React.createElement('span', { className:'nav-label' }, label)
+        )
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+
+<!-- Service Worker registration -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
