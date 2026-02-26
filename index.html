@@ -62,9 +62,16 @@ html, body { height: 100%; background: #080b12; }
 .day-date { font-size: 13px; font-weight: 600; color: var(--text); }
 .day-total { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--amber); }
 .day-rows { padding: 8px 0; }
-.day-row { padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
-.day-row-account { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.day-row { padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.day-row-left { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.day-row-account { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day-row-times { font-family: var(--mono); font-size: 11px; color: #3a4460; }
+.day-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .day-row-dur { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
+.session-del { padding: 3px 8px; border-radius: 4px; background: transparent; border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.6); font-size: 13px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
+.session-del:hover { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.5); color: #ef4444; }
+.danger-btn { width: 100%; padding: 13px; border-radius: 8px; background: transparent; border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.7); font-family: var(--ui); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.danger-btn:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.5); color: #ef4444; }
 .empty-state { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 14px; line-height: 1.7; }
 .empty-state .icon { display: block; font-size: 32px; margin-bottom: 12px; }
 .settings-section { margin-bottom: 28px; }
@@ -150,24 +157,39 @@ function fmtDuration(ms) {
   return `${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}m`;
 }
 
-function calcDailyTotals(entries) {
-  const days = {};
+function calcSessions(entries) {
+  const sessions = [];
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
     if (e.type !== 'i') continue;
     const next = entries[i+1];
-    if (!next || next.type !== 'o') continue;
-    const ms = new Date(next.datetime) - new Date(e.datetime);
-    const dk = new Date(e.datetime).toLocaleDateString('en-CA');
-    if (!days[dk]) days[dk] = { date:dk, totalMs:0, byAccount:{} };
-    days[dk].totalMs += ms;
-    days[dk].byAccount[e.account] = (days[dk].byAccount[e.account]||0) + ms;
+    const startDt = new Date(e.datetime);
+    if (!next || next.type !== 'o') {
+      sessions.push({ inIdx:i, outIdx:null, account:e.account, startDt, endDt:null, ms:null, date:startDt.toLocaleDateString('en-CA') });
+    } else {
+      const endDt = new Date(next.datetime);
+      sessions.push({ inIdx:i, outIdx:i+1, account:e.account, startDt, endDt, ms:endDt-startDt, date:startDt.toLocaleDateString('en-CA') });
+    }
+  }
+  return sessions;
+}
+
+function groupByDay(sessions) {
+  const days = {};
+  for (const s of sessions) {
+    if (!days[s.date]) days[s.date] = { date:s.date, totalMs:0, sessions:[] };
+    days[s.date].sessions.push(s);
+    if (s.ms) days[s.date].totalMs += s.ms;
   }
   return Object.values(days).sort((a,b) => b.date.localeCompare(a.date));
 }
 
 function fmtDate(dateStr) {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
+function fmtTime(dt) {
+  return new Date(dt).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:false });
 }
 
 // ── App ──────────────────────────────────────────────────────────
@@ -189,9 +211,11 @@ function App() {
   const isClockedIn = lastEntry?.type === 'i';
   const currentAccount = isClockedIn ? lastEntry.account : null;
   const runningMs = isClockedIn ? now - new Date(lastEntry.datetime) : 0;
-  const dailyTotals = calcDailyTotals(entries);
+  const allSessions = calcSessions(entries);
+  const days = groupByDay(allSessions);
   const todayKey = now.toLocaleDateString('en-CA');
-  const todayTotals = dailyTotals.find(d => d.date === todayKey);
+  const todayDay = days.find(d => d.date === todayKey);
+  const todayMs = todayDay ? todayDay.totalMs + (isClockedIn ? runningMs : 0) : (isClockedIn ? runningMs : 0);
 
   function triggerFlash(type) {
     setFlash(null);
@@ -212,6 +236,16 @@ function App() {
   function clockOut() {
     setEntries(p => [...p, { type:'o', datetime:new Date().toISOString() }]);
     triggerFlash('out');
+  }
+
+  function deleteSession(inIdx, outIdx) {
+    if (!confirm('Delete this time entry?')) return;
+    setEntries(prev => prev.filter((_, i) => i !== inIdx && i !== outIdx));
+  }
+
+  function clearAll() {
+    if (!confirm('Delete ALL entries? This cannot be undone.\n\nExport first if you want a backup.')) return;
+    setEntries([]);
   }
 
   function doImport() {
@@ -270,10 +304,10 @@ function App() {
             React.createElement('div', { className:'running-time' }, fmtDuration(runningMs)),
             React.createElement('button', { className:'clock-out-btn', onClick:clockOut }, 'Clock Out')
           )
-        : todayTotals
+        : todayMs > 0
           ? React.createElement('div', { style:{textAlign:'right'} },
               React.createElement('div', { className:'status-label' }, 'Today'),
-              React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'18px',color:'var(--amber)',fontWeight:'600'} }, fmtDuration(todayTotals.totalMs))
+              React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'18px',color:'var(--amber)',fontWeight:'600'} }, fmtDuration(todayMs))
             )
           : React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'12px',color:'var(--muted)'} }, 'No entries today')
     ),
@@ -289,7 +323,7 @@ function App() {
         React.createElement('div', { className:'project-grid' },
           projects.map(p => {
             const isCurrent = p === currentAccount;
-            const accountMs = todayTotals?.byAccount[p];
+            const accountMs = todayDay?.sessions.filter(s=>s.account===p&&s.ms).reduce((a,s)=>a+s.ms,0);
             return React.createElement('button', {
               key: p,
               className: `project-btn ${isCurrent?'current':''}`,
@@ -314,27 +348,41 @@ function App() {
 
       // LOG TAB
       tab === 'log' && React.createElement(React.Fragment, null,
-        React.createElement('div', { className:'section-label', style:{marginTop:4} }, 'Daily totals'),
-        dailyTotals.length === 0
+        React.createElement('div', { className:'section-label', style:{marginTop:4} }, 'Sessions'),
+        days.length === 0
           ? React.createElement('div', { className:'empty-state' },
               React.createElement('span', { className:'icon' }, '📋'),
               'No entries yet. Clock in to start tracking.'
             )
-          : dailyTotals.slice(0,60).map(day =>
+          : days.slice(0,60).map(day =>
               React.createElement('div', { key:day.date, className:'day-card' },
                 React.createElement('div', { className:'day-header' },
                   React.createElement('div', { className:'day-date' }, fmtDate(day.date)),
                   React.createElement('div', { className:'day-total' }, fmtDuration(day.totalMs))
                 ),
                 React.createElement('div', { className:'day-rows' },
-                  Object.entries(day.byAccount)
-                    .sort((a,b)=>b[1]-a[1])
-                    .map(([acc,ms]) =>
-                      React.createElement('div', { key:acc, className:'day-row' },
-                        React.createElement('div', { className:'day-row-account' }, acc),
-                        React.createElement('div', { className:'day-row-dur' }, fmtDuration(ms))
+                  day.sessions.map((s, si) =>
+                    React.createElement('div', { key:si, className:'day-row' },
+                      React.createElement('div', { className:'day-row-left' },
+                        React.createElement('div', { className:'day-row-account' }, s.account),
+                        React.createElement('div', { className:'day-row-times' },
+                          s.endDt
+                            ? `${fmtTime(s.startDt)} → ${fmtTime(s.endDt)}`
+                            : `${fmtTime(s.startDt)} → now`
+                        )
+                      ),
+                      React.createElement('div', { className:'day-row-right' },
+                        React.createElement('div', { className:'day-row-dur' },
+                          s.ms ? fmtDuration(s.ms) : '—'
+                        ),
+                        React.createElement('button', {
+                          className:'session-del',
+                          onClick: () => deleteSession(s.inIdx, s.outIdx),
+                          title: 'Delete entry'
+                        }, '×')
                       )
                     )
+                  )
                 )
               )
             )
@@ -379,24 +427,25 @@ function App() {
           ),
           React.createElement('div', { className:'hint' },
             'Export produces a standard hledger timeclock file. Import merges with existing data — duplicates are skipped.'
-          )
+          ),
+          React.createElement('button', { className:'danger-btn', onClick:clearAll }, '⚠  Clear all data')
         ),
 
         React.createElement('div', { className:'settings-section' },
           React.createElement('div', { className:'section-label' }, 'Stats'),
           React.createElement('div', { style:{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'14px 16px'} },
             React.createElement('div', { className:'stat-row' },
-              React.createElement('span', { style:{fontSize:13,color:'var(--muted)'} }, 'Total entries'),
-              React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13} }, entries.length)
+              React.createElement('span', { style:{fontSize:13,color:'var(--muted)'} }, 'Sessions logged'),
+              React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13} }, allSessions.filter(s=>s.ms).length)
             ),
             React.createElement('div', { className:'stat-row' },
               React.createElement('span', { style:{fontSize:13,color:'var(--muted)'} }, 'Days logged'),
-              React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13} }, dailyTotals.length)
+              React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13} }, days.length)
             ),
             React.createElement('div', { className:'stat-row' },
               React.createElement('span', { style:{fontSize:13,color:'var(--muted)'} }, 'All-time hours'),
               React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:13,color:'var(--amber)'} },
-                fmtDuration(dailyTotals.reduce((a,d)=>a+d.totalMs,0))
+                fmtDuration(days.reduce((a,d)=>a+d.totalMs,0))
               )
             )
           )
