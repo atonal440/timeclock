@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#080b12"/>
+<meta name="theme-color" content="#080b12" media="(prefers-color-scheme: dark)"/>
+<meta name="theme-color" content="#f7f3ee" media="(prefers-color-scheme: light)"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="TimeClock"/>
@@ -14,8 +15,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; background: #080b12; }
+html, body { height: 100%; }
 #root { height: 100%; }
+
+/* ── Dark mode (default) ── */
 :root {
   --bg: #080b12;
   --surface: #10141e;
@@ -23,27 +26,92 @@ html, body { height: 100%; background: #080b12; }
   --border: #1e2535;
   --lime: #a3e635;
   --lime-dim: #4a6e12;
+  --lime-bg: rgba(163,230,53,0.05);
+  --lime-badge-bg: rgba(163,230,53,0.15);
+  --lime-badge-border: rgba(163,230,53,0.2);
   --amber: #f59e0b;
   --text: #e8edf5;
   --muted: #5a6480;
-  --danger: #ef4444;
+  --times-color: #3a4460;
+  --nav-bg: rgba(8,11,18,0.95);
   --mono: 'Azeret Mono', monospace;
   --ui: 'Outfit', sans-serif;
 }
+
+/* ── Light mode ── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f3ee;
+    --surface: #edeae4;
+    --surface2: #e4e0d9;
+    --border: #cdc8bf;
+    --lime: #3a6b08;
+    --lime-dim: #7ab83a;
+    --lime-bg: rgba(58,107,8,0.06);
+    --lime-badge-bg: rgba(58,107,8,0.1);
+    --lime-badge-border: rgba(58,107,8,0.25);
+    --amber: #92400e;
+    --text: #1c1917;
+    --muted: #78716c;
+    --times-color: #a8a29e;
+    --nav-bg: rgba(247,243,238,0.95);
+  }
+}
+
+/* ── Manual overrides (beat the media query) ── */
+[data-theme="light"] {
+  --bg: #f7f3ee;
+  --surface: #edeae4;
+  --surface2: #e4e0d9;
+  --border: #cdc8bf;
+  --lime: #3a6b08;
+  --lime-dim: #7ab83a;
+  --lime-bg: rgba(58,107,8,0.06);
+  --lime-badge-bg: rgba(58,107,8,0.1);
+  --lime-badge-border: rgba(58,107,8,0.25);
+  --amber: #92400e;
+  --text: #1c1917;
+  --muted: #78716c;
+  --times-color: #a8a29e;
+  --nav-bg: rgba(247,243,238,0.95);
+}
+[data-theme="dark"] {
+  --bg: #080b12;
+  --surface: #10141e;
+  --surface2: #161b28;
+  --border: #1e2535;
+  --lime: #a3e635;
+  --lime-dim: #4a6e12;
+  --lime-bg: rgba(163,230,53,0.05);
+  --lime-badge-bg: rgba(163,230,53,0.15);
+  --lime-badge-border: rgba(163,230,53,0.2);
+  --amber: #f59e0b;
+  --text: #e8edf5;
+  --muted: #5a6480;
+  --times-color: #3a4460;
+  --nav-bg: rgba(8,11,18,0.95);
+}
+
+html, body { background: var(--bg); }
+
 .app { font-family: var(--ui); background: var(--bg); min-height: 100vh; min-height: -webkit-fill-available; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; color: var(--text); position: relative; overflow: hidden; }
 .header { padding: 20px 20px 0; padding-top: max(20px, env(safe-area-inset-top)); }
 .time-display { font-family: var(--mono); font-size: 52px; font-weight: 700; letter-spacing: -2px; line-height: 1; color: var(--text); transition: color 0.3s; }
-.time-display.clocked-in { color: var(--lime); text-shadow: 0 0 30px rgba(163,230,53,0.3); }
+.time-display.clocked-in { color: var(--lime); }
+@media (prefers-color-scheme: dark) { .time-display.clocked-in { text-shadow: 0 0 30px rgba(163,230,53,0.3); } }
 .date-line { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+/* Status bar — idle: single row; active: stacked layout */
 .status-bar { margin: 16px 20px 0; padding: 12px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: border-color 0.3s, background 0.3s; }
-.status-bar.active { border-color: var(--lime-dim); background: rgba(163,230,53,0.05); }
+.status-bar.active { border-color: var(--lime-dim); background: var(--lime-bg); flex-direction: column; align-items: stretch; gap: 10px; padding-bottom: 14px; }
+.status-top-row { display: flex; justify-content: space-between; align-items: baseline; }
 .status-left { display: flex; flex-direction: column; gap: 2px; }
 .status-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 500; }
-.status-account { font-family: var(--mono); font-size: 14px; color: var(--lime); }
+.status-account { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--lime); margin-top: 3px; word-break: break-all; }
 .status-idle { font-family: var(--mono); font-size: 14px; color: var(--muted); }
-.running-time { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--lime); }
-.clock-out-btn { padding: 8px 16px; border-radius: 7px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-family: var(--ui); font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; }
-.clock-out-btn:hover { background: rgba(239,68,68,0.25); }
+.running-time { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--lime); white-space: nowrap; }
+.clock-out-btn { width: 100%; padding: 10px; border-radius: 7px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; text-align: center; }
+.clock-out-btn:hover { background: rgba(239,68,68,0.22); }
 .content { flex: 1; overflow-y: auto; padding: 16px 20px 100px; }
 .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 10px; padding-left: 2px; }
 .project-grid { display: flex; flex-direction: column; gap: 8px; }
@@ -53,7 +121,7 @@ html, body { height: 100%; background: #080b12; }
 .project-btn:active { transform: scale(0.98); }
 .project-name { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--text); }
 .project-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.project-badge { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 20px; background: rgba(163,230,53,0.15); color: var(--lime); border: 1px solid rgba(163,230,53,0.2); white-space: nowrap; }
+.project-badge { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 20px; background: var(--lime-badge-bg); color: var(--lime); border: 1px solid var(--lime-badge-border); white-space: nowrap; }
 .tap-hint { font-size: 11px; color: var(--muted); text-align: center; padding: 20px 0 0; font-style: italic; }
 .flash-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0; }
 .flash-overlay.in { animation: flashAnim 0.6s ease-out forwards; background: rgba(163,230,53,0.12); }
@@ -67,13 +135,27 @@ html, body { height: 100%; background: #080b12; }
 .day-row { padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .day-row-left { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .day-row-account { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.day-row-times { font-family: var(--mono); font-size: 11px; color: #3a4460; }
+.day-row-times { font-family: var(--mono); font-size: 11px; color: var(--times-color); }
 .day-row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .day-row-dur { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
 .session-del { padding: 3px 8px; border-radius: 4px; background: transparent; border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.6); font-size: 13px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
 .session-del:hover { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.5); color: #ef4444; }
 .danger-btn { width: 100%; padding: 13px; border-radius: 8px; background: transparent; border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.7); font-family: var(--ui); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .danger-btn:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.5); color: #ef4444; }
+/* ── Modal ── */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding-bottom: max(24px, env(safe-area-inset-bottom)); animation: fadeIn 0.15s ease; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.modal { background: var(--surface2); border: 1px solid var(--border); border-radius: 16px 16px 12px 12px; padding: 24px 20px 20px; width: 100%; max-width: 480px; animation: slideUp 0.2s ease; }
+@keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+.modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+.modal-body { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 20px; }
+.modal-btns { display: flex; gap: 8px; }
+.modal-cancel { flex: 1; padding: 12px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 14px; cursor: pointer; }
+.modal-confirm { flex: 1; padding: 12px; border-radius: 8px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #ef4444; font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; }
+.modal-confirm:hover { background: rgba(239,68,68,0.2); }
+/* ── Toast ── */
+.toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; font-size: 13px; color: var(--text); z-index: 300; white-space: nowrap; animation: toastIn 0.2s ease; pointer-events: none; }
+@keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
 .empty-state { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 14px; line-height: 1.7; }
 .empty-state .icon { display: block; font-size: 32px; margin-bottom: 12px; }
 .settings-section { margin-bottom: 28px; }
@@ -90,13 +172,16 @@ html, body { height: 100%; background: #080b12; }
 .action-btn:hover { background: var(--surface2); }
 .import-area { width: 100%; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 11px; outline: none; resize: vertical; min-height: 120px; margin-bottom: 8px; }
 .import-area::placeholder { color: var(--muted); }
-.confirm-btn { width: 100%; padding: 12px; border-radius: 8px; background: rgba(163,230,53,0.1); border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 6px; }
-.confirm-btn:hover { background: rgba(163,230,53,0.18); }
+.confirm-btn { width: 100%; padding: 12px; border-radius: 8px; background: var(--lime-badge-bg); border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 6px; }
+.confirm-btn:hover { background: var(--lime-badge-border); }
 .cancel-btn { width: 100%; padding: 12px; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 14px; cursor: pointer; }
+.theme-toggle { display: flex; gap: 6px; }
+.theme-opt { flex: 1; padding: 9px 4px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: center; }
+.theme-opt.active { background: var(--lime-badge-bg); border-color: var(--lime-dim); color: var(--lime); }
 .hint { font-size: 11px; color: var(--muted); line-height: 1.5; padding: 8px 0; }
 .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .stat-row:last-child { margin-bottom: 0; }
-.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(8,11,18,0.95); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; padding: 8px 0; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--nav-bg); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; padding: 8px 0; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; background: none; border: none; cursor: pointer; color: var(--muted); transition: color 0.15s; }
 .nav-btn.active { color: var(--lime); }
 .nav-icon { font-size: 20px; }
@@ -109,6 +194,13 @@ html, body { height: 100%; background: #080b12; }
 <body>
 <div id="root"></div>
 
+<script>
+// Apply theme before render to avoid flash
+try {
+  const t = JSON.parse(localStorage.getItem('tc-theme'));
+  if (t && t !== 'system') document.documentElement.setAttribute('data-theme', t);
+} catch {}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
@@ -198,7 +290,10 @@ function fmtTime(dt) {
 function App() {
   const [entries, setEntries] = useState(() => loadData('tc-entries', []));
   const [projects, setProjects] = useState(() => loadData('tc-projects', []));
+  const [theme, setTheme] = useState(() => loadData('tc-theme', 'system'));
   const [tab, setTab] = useState('clock');
+  const [modal, setModal] = useState(null); // { title, body, onConfirm }
+  const [toast, setToast] = useState(null);
   const [now, setNow] = useState(new Date());
   const [newProject, setNewProject] = useState('');
   const [importText, setImportText] = useState('');
@@ -208,6 +303,12 @@ function App() {
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { saveData('tc-entries', entries); }, [entries]);
   useEffect(() => { saveData('tc-projects', projects); }, [projects]);
+  useEffect(() => {
+    saveData('tc-theme', theme);
+    const html = document.documentElement;
+    if (theme === 'system') html.removeAttribute('data-theme');
+    else html.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const lastEntry = entries[entries.length - 1];
   const isClockedIn = lastEntry?.type === 'i';
@@ -240,20 +341,31 @@ function App() {
     triggerFlash('out');
   }
 
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }
+
   function deleteSession(inIdx, outIdx) {
-    if (!confirm('Delete this time entry?')) return;
-    setEntries(prev => prev.filter((_, i) => i !== inIdx && i !== outIdx));
+    setModal({
+      title: 'Delete entry?',
+      body: 'This session will be removed from your log.',
+      onConfirm: () => setEntries(prev => prev.filter((_, i) => i !== inIdx && i !== outIdx))
+    });
   }
 
   function clearAll() {
-    if (!confirm('Delete ALL entries? This cannot be undone.\n\nExport first if you want a backup.')) return;
-    setEntries([]);
+    setModal({
+      title: 'Clear all data?',
+      body: 'Every session will be permanently deleted. Export first if you want a backup.',
+      onConfirm: () => setEntries([])
+    });
   }
 
   function doImport() {
     try {
       const parsed = parseTimeclockFile(importText);
-      if (!parsed.length) { alert('No valid entries found.'); return; }
+      if (!parsed.length) { showToast('No valid entries found.'); return; }
       setEntries(prev => {
         const existing = new Set(prev.map(e => e.datetime+e.type));
         const merged = [...prev, ...parsed.filter(e => !existing.has(e.datetime+e.type))]
@@ -263,8 +375,8 @@ function App() {
       const accs = parsed.filter(e => e.type==='i').map(e => e.account);
       setProjects(prev => Array.from(new Set([...prev, ...accs])));
       setImportText(''); setShowImport(false);
-      alert(`Imported ${parsed.length} entries.`);
-    } catch(e) { alert('Parse error: '+e.message); }
+      showToast(`Imported ${parsed.length} entries.`);
+    } catch(e) { showToast('Parse error: '+e.message); }
   }
 
   function doExport() {
@@ -287,6 +399,21 @@ function App() {
   return React.createElement('div', { className:'app' },
     flash && React.createElement('div', { className:`flash-overlay ${flash}`, key:Date.now() }),
 
+    // Modal
+    modal && React.createElement('div', { className:'modal-backdrop', onClick: e => e.target === e.currentTarget && setModal(null) },
+      React.createElement('div', { className:'modal' },
+        React.createElement('div', { className:'modal-title' }, modal.title),
+        React.createElement('div', { className:'modal-body' }, modal.body),
+        React.createElement('div', { className:'modal-btns' },
+          React.createElement('button', { className:'modal-cancel', onClick: () => setModal(null) }, 'Cancel'),
+          React.createElement('button', { className:'modal-confirm', onClick: () => { modal.onConfirm(); setModal(null); } }, 'Delete')
+        )
+      )
+    ),
+
+    // Toast
+    toast && React.createElement('div', { className:'toast' }, toast),
+
     // Header
     React.createElement('div', { className:'header' },
       React.createElement('div', { className:`time-display ${isClockedIn?'clocked-in':''}` }, timeStr),
@@ -295,23 +422,30 @@ function App() {
 
     // Status bar
     React.createElement('div', { className:`status-bar ${isClockedIn?'active':''}` },
-      React.createElement('div', { className:'status-left' },
-        React.createElement('div', { className:'status-label' }, isClockedIn ? 'Clocked in' : 'Status'),
-        isClockedIn
-          ? React.createElement('div', { className:'status-account' }, currentAccount)
-          : React.createElement('div', { className:'status-idle' }, '— idle —')
-      ),
       isClockedIn
         ? React.createElement(React.Fragment, null,
-            React.createElement('div', { className:'running-time' }, fmtDuration(runningMs)),
+            // Top row: label + running time
+            React.createElement('div', { className:'status-top-row' },
+              React.createElement('div', { className:'status-label' }, 'Clocked in'),
+              React.createElement('div', { className:'running-time' }, fmtDuration(runningMs))
+            ),
+            // Account name — full width, can wrap
+            React.createElement('div', { className:'status-account' }, currentAccount),
+            // Full-width clock out button
             React.createElement('button', { className:'clock-out-btn', onClick:clockOut }, 'Clock Out')
           )
-        : todayMs > 0
-          ? React.createElement('div', { style:{textAlign:'right'} },
-              React.createElement('div', { className:'status-label' }, 'Today'),
-              React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'18px',color:'var(--amber)',fontWeight:'600'} }, fmtDuration(todayMs))
-            )
-          : React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'12px',color:'var(--muted)'} }, 'No entries today')
+        : React.createElement(React.Fragment, null,
+            React.createElement('div', { className:'status-left' },
+              React.createElement('div', { className:'status-label' }, 'Status'),
+              React.createElement('div', { className:'status-idle' }, '— idle —')
+            ),
+            todayMs > 0
+              ? React.createElement('div', { style:{textAlign:'right'} },
+                  React.createElement('div', { className:'status-label' }, 'Today'),
+                  React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'18px',color:'var(--amber)',fontWeight:'600'} }, fmtDuration(todayMs))
+                )
+              : React.createElement('div', { style:{fontFamily:'var(--mono)',fontSize:'12px',color:'var(--muted)'} }, 'No entries today')
+          )
     ),
 
     // Content
@@ -336,7 +470,7 @@ function App() {
               ),
               React.createElement('div', { style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6} },
                 isCurrent && React.createElement('span', { className:'project-badge' }, '● NOW'),
-                accountMs && !isCurrent && React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:'12px',color:'var(--muted)'} }, fmtDuration(accountMs)+' today')
+                accountMs > 0 && !isCurrent && React.createElement('span', { style:{fontFamily:'var(--mono)',fontSize:'12px',color:'var(--muted)'} }, fmtDuration(accountMs)+' today')
               )
             );
           })
@@ -392,6 +526,19 @@ function App() {
 
       // PROJECTS TAB
       tab === 'projects' && React.createElement(React.Fragment, null,
+        React.createElement('div', { className:'settings-section' },
+          React.createElement('div', { className:'section-label' }, 'Appearance'),
+          React.createElement('div', { className:'theme-toggle' },
+            [['light','☀ Light'],['system','⬤ System'],['dark','☽ Dark']].map(([val, label]) =>
+              React.createElement('button', {
+                key: val,
+                className: `theme-opt ${theme === val ? 'active' : ''}`,
+                onClick: () => setTheme(val)
+              }, label)
+            )
+          )
+        ),
+
         React.createElement('div', { className:'settings-section' },
           React.createElement('div', { className:'section-label' }, 'Projects'),
           projects.map(p =>
