@@ -624,7 +624,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
 <!-- Service Worker registration -->
 <script>
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/timeclock/sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 </script>
 </body>

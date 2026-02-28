@@ -1,7 +1,7 @@
-const CACHE = 'timeclock-v3';
+const CACHE = 'timeclock-v4';
 const ASSETS = [
-  '/timeclock/',
-  '/timeclock/index.html',
+  self.registration.scope,
+  self.registration.scope + 'index.html',
   'https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
@@ -19,6 +19,6 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('/timeclock/')))
+    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match(self.registration.scope)))
   );
 });
