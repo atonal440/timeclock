@@ -140,6 +140,16 @@ html, body { background: var(--bg); }
 .day-row-dur { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
 .session-del { padding: 3px 8px; border-radius: 4px; background: transparent; border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.6); font-size: 13px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
 .session-del:hover { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.5); color: #ef4444; }
+.session-edit { padding: 3px 8px; border-radius: 4px; background: transparent; border: 1px solid rgba(100,140,255,0.2); color: rgba(120,150,255,0.6); font-size: 13px; cursor: pointer; line-height: 1; transition: all 0.15s; flex-shrink: 0; }
+.session-edit:hover { background: rgba(100,140,255,0.1); border-color: rgba(120,150,255,0.45); color: #8aabff; }
+.edit-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+.edit-field { width: 100%; padding: 11px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 14px; outline: none; transition: border-color 0.15s; appearance: none; -webkit-appearance: none; }
+.edit-field:focus { border-color: #2a3147; }
+.edit-row { margin-bottom: 14px; }
+.edit-times { display: flex; gap: 8px; }
+.edit-times .edit-row { flex: 1; margin-bottom: 0; }
+.modal-save { flex: 1; padding: 12px; border-radius: 8px; background: var(--lime-badge-bg); border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; }
+.modal-save:hover { opacity: 0.85; }
 .danger-btn { width: 100%; padding: 13px; border-radius: 8px; background: transparent; border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.7); font-family: var(--ui); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .danger-btn:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.5); color: #ef4444; }
 /* ── Modal ── */
@@ -219,7 +229,7 @@ function saveData(key, value) {
 function formatTC(date) {
   const d = new Date(date);
   const p = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function parseTimeclockFile(content) {
@@ -299,6 +309,7 @@ function App() {
   const [importText, setImportText] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [flash, setFlash] = useState(null);
+  const [editSession, setEditSession] = useState(null); // { inIdx, outIdx, account, date, startTime, endTime }
 
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
   useEffect(() => { saveData('tc-entries', entries); }, [entries]);
@@ -344,6 +355,31 @@ function App() {
   function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
+  }
+
+  function openEdit(s) {
+    setEditSession({
+      inIdx: s.inIdx,
+      outIdx: s.outIdx,
+      account: s.account,
+      date: s.date,
+      startTime: fmtTime(s.startDt),
+      endTime: s.endDt ? fmtTime(s.endDt) : '',
+    });
+  }
+
+  function saveEdit() {
+    if (!editSession) return;
+    const { inIdx, outIdx, account, date, startTime, endTime } = editSession;
+    setEntries(prev => {
+      const next = [...prev];
+      next[inIdx] = { ...next[inIdx], account, datetime: new Date(`${date}T${startTime}:00`).toISOString() };
+      if (outIdx !== null && endTime) {
+        next[outIdx] = { ...next[outIdx], datetime: new Date(`${date}T${endTime}:00`).toISOString() };
+      }
+      return next;
+    });
+    setEditSession(null);
   }
 
   function deleteSession(inIdx, outIdx) {
@@ -399,7 +435,54 @@ function App() {
   return React.createElement('div', { className:'app' },
     flash && React.createElement('div', { className:`flash-overlay ${flash}`, key:Date.now() }),
 
-    // Modal
+    // Edit session modal
+    editSession && React.createElement('div', { className:'modal-backdrop', onClick: e => e.target === e.currentTarget && setEditSession(null) },
+      React.createElement('div', { className:'modal' },
+        React.createElement('div', { className:'modal-title', style:{marginBottom:16} }, 'Edit Entry'),
+
+        React.createElement('div', { className:'edit-row' },
+          React.createElement('div', { className:'edit-label' }, 'Client / Project'),
+          React.createElement('select', {
+            className: 'edit-field',
+            value: editSession.account,
+            onChange: e => setEditSession(p => ({ ...p, account: e.target.value }))
+          },
+            // include current account even if not in projects list
+            Array.from(new Set([...projects, editSession.account])).map(p =>
+              React.createElement('option', { key:p, value:p }, p)
+            )
+          )
+        ),
+
+        React.createElement('div', { className:'edit-times' },
+          React.createElement('div', { className:'edit-row' },
+            React.createElement('div', { className:'edit-label' }, 'Start'),
+            React.createElement('input', {
+              type: 'time',
+              className: 'edit-field',
+              value: editSession.startTime,
+              onChange: e => setEditSession(p => ({ ...p, startTime: e.target.value }))
+            })
+          ),
+          editSession.outIdx !== null && React.createElement('div', { className:'edit-row' },
+            React.createElement('div', { className:'edit-label' }, 'End'),
+            React.createElement('input', {
+              type: 'time',
+              className: 'edit-field',
+              value: editSession.endTime,
+              onChange: e => setEditSession(p => ({ ...p, endTime: e.target.value }))
+            })
+          )
+        ),
+
+        React.createElement('div', { className:'modal-btns', style:{marginTop:6} },
+          React.createElement('button', { className:'modal-cancel', onClick: () => setEditSession(null) }, 'Cancel'),
+          React.createElement('button', { className:'modal-save', onClick: saveEdit }, 'Save')
+        )
+      )
+    ),
+
+    // Confirm modal
     modal && React.createElement('div', { className:'modal-backdrop', onClick: e => e.target === e.currentTarget && setModal(null) },
       React.createElement('div', { className:'modal' },
         React.createElement('div', { className:'modal-title' }, modal.title),
@@ -511,6 +594,11 @@ function App() {
                         React.createElement('div', { className:'day-row-dur' },
                           s.ms ? fmtDuration(s.ms) : '—'
                         ),
+                        React.createElement('button', {
+                          className:'session-edit',
+                          onClick: () => openEdit(s),
+                          title: 'Edit entry'
+                        }, '✎'),
                         React.createElement('button', {
                           className:'session-del',
                           onClick: () => deleteSession(s.inIdx, s.outIdx),
