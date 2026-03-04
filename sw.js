@@ -1,4 +1,4 @@
-const CACHE = 'timeclock-v4';
+const CACHE = 'timeclock-v5';
 const ASSETS = [
   self.registration.scope,
   self.registration.scope + 'index.html',
