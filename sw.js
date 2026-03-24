@@ -1,4 +1,4 @@
-const CACHE = 'timeclock-v6';
+const CACHE = 'timeclock-v7';
 const STATIC_ASSETS = [
   'https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
@@ -28,15 +28,17 @@ self.addEventListener('fetch', e => {
                  url.pathname === self.registration.scope;
 
   if (isHTML) {
-    // Network-first: always try to get fresh HTML, fall back to cache when offline
+    // Stale-while-revalidate: serve cache instantly, update in background
     e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy));
-          return res;
+      caches.open(CACHE).then(cache =>
+        cache.match(e.request).then(cached => {
+          const fetchPromise = fetch(e.request).then(res => {
+            cache.put(e.request, res.clone());
+            return res;
+          });
+          return cached || fetchPromise;
         })
-        .catch(() => caches.match(e.request))
+      )
     );
   } else {
     // Cache-first: static assets (React, fonts) rarely change
