@@ -37,9 +37,19 @@ A single-file progressive web app for tracking time in [hledger timeclock format
 - Works fully offline — loads from cache instantly, updates in the background when online
 - Optimized for mobile with safe area support for notched devices
 
+### Cloud Sync (Optional)
+- Sync entries to Cloudflare Workers KV for backup and cross-device access
+- Auto-push new entries on clock in/out
+- Manual sync button in header for on-demand pull/push
+- Works offline — retries sync automatically when back online
+- Last-write-wins conflict resolution for edits
+- See [CLOUDFLARE_SYNC_SETUP.md](./CLOUDFLARE_SYNC_SETUP.md) for deployment
+
 ## Data Storage
 
-All data is stored locally in `localStorage` — nothing is sent to a server. Export your `timeclock.journal` regularly as a backup.
+All data is stored locally in `localStorage` — nothing is sent to a server by default. Export your `timeclock.journal` regularly as a backup.
+
+If you set up the optional cloud sync, entries are also stored in Cloudflare KV (see setup guide).
 
 ## hledger Format
 
