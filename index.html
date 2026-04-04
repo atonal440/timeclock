@@ -205,6 +205,12 @@ html, body { background: var(--bg); }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.sync-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 8px; color: var(--muted); transition: color 0.2s, transform 0.3s; }
+.sync-btn:hover:not(:disabled) { color: var(--lime); }
+.sync-btn.syncing { color: var(--lime); animation: spin 1s linear infinite; }
+.sync-btn.error { color: var(--amber); }
+.sync-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -376,11 +382,15 @@ function App() {
       setEntries(p => [...p, { type:'i', datetime:new Date().toISOString(), account }]);
     }
     triggerFlash('in');
+    // Auto-sync to cloud
+    setTimeout(() => autoSyncNewEntry(), 100);
   }
 
   function clockOut() {
     setEntries(p => [...p, { type:'o', datetime:new Date().toISOString() }]);
     triggerFlash('out');
+    // Auto-sync to cloud
+    setTimeout(() => autoSyncNewEntry(), 100);
   }
 
   function showToast(msg) {
@@ -468,6 +478,99 @@ function App() {
     setNewProject('');
   }
 
+  // ── Cloud Sync Utilities ──────────────────────────────────────
+  const SYNC_ENDPOINT = 'https://timeclock.example.com/api/sync'; // Change to your Worker URL
+  const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, error
+
+  async function pushToCloud() {
+    setSyncStatus('syncing');
+    try {
+      const response = await fetch(SYNC_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          entries: entries.map(e => ({
+            ...e,
+            syncedAt: new Date().toISOString()
+          }))
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Sync failed');
+      showToast(`Synced ${data.synced} entries to cloud`);
+      setSyncStatus('idle');
+    } catch (err) {
+      console.error('Push to cloud failed:', err);
+      showToast(`Sync error: ${err.message}`);
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    }
+  }
+
+  async function pullFromCloud() {
+    setSyncStatus('syncing');
+    try {
+      const response = await fetch(SYNC_ENDPOINT, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Sync failed');
+
+      // Merge cloud entries with local, using last-write-wins for edits
+      setEntries(prev => {
+        const existing = new Map();
+        prev.forEach(e => {
+          const key = `${e.datetime}:${e.type}`;
+          existing.set(key, e);
+        });
+
+        // Update or add cloud entries
+        for (const cloudEntry of data.entries) {
+          const key = `${cloudEntry.datetime}:${cloudEntry.type}`;
+          const localEntry = existing.get(key);
+          if (!localEntry) {
+            // New entry from cloud
+            existing.set(key, { type: cloudEntry.type, datetime: cloudEntry.datetime, account: cloudEntry.account });
+          } else if (cloudEntry.account && localEntry.account !== cloudEntry.account) {
+            // Edit: cloud version is newer (last-write-wins)
+            localEntry.account = cloudEntry.account;
+          }
+        }
+
+        const merged = Array.from(existing.values())
+          .sort((a, b) => a.datetime.localeCompare(b.datetime));
+        return merged;
+      });
+
+      showToast(`Synced ${data.entries.length} entries from cloud`);
+      setSyncStatus('idle');
+    } catch (err) {
+      console.error('Pull from cloud failed:', err);
+      showToast(`Sync error: ${err.message}`);
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    }
+  }
+
+  async function autoSyncNewEntry() {
+    // Auto-push immediately after new entry (silently fail if offline)
+    if (syncStatus === 'idle') {
+      try {
+        const lastEntry = entries[entries.length - 1];
+        if (lastEntry) {
+          await fetch(SYNC_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              entries: [{ ...lastEntry, syncedAt: new Date().toISOString() }]
+            })
+          }).catch(() => {}); // Silently fail offline
+        }
+      } catch (err) {}
+    }
+  }
+
   const timeStr = now.toLocaleTimeString('en-US', { hour12:false });
   const dateStr = now.toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
 
@@ -538,8 +641,18 @@ function App() {
 
     // Header
     React.createElement('div', { className:'header' },
-      React.createElement('div', { className:`time-display ${isClockedIn?'clocked-in':''}` }, timeStr),
-      React.createElement('div', { className:'date-line' }, dateStr)
+      React.createElement('div', { style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start'} },
+        React.createElement('div', null,
+          React.createElement('div', { className:`time-display ${isClockedIn?'clocked-in':''}` }, timeStr),
+          React.createElement('div', { className:'date-line' }, dateStr)
+        ),
+        React.createElement('button', {
+          className: `sync-btn ${syncStatus}`,
+          onClick: () => { pushToCloud(); setTimeout(() => pullFromCloud(), 100); },
+          disabled: syncStatus === 'syncing',
+          title: syncStatus === 'syncing' ? 'Syncing...' : 'Sync with cloud'
+        }, syncStatus === 'syncing' ? '⟳' : '☁')
+      )
     ),
 
     // Status bar

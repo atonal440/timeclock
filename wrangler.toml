@@ -1,0 +1,20 @@
+name = "timeclock-sync"
+type = "javascript"
+account_id = ""
+workers_dev = true
+route = ""
+zone_id = ""
+
+main = "worker.js"
+
+[env.production]
+route = "https://timeclock.example.com/api/sync"
+zone_id = ""
+
+[[kv_namespaces]]
+binding = "timeclock-sync"
+id = ""
+preview_id = ""
+
+[triggers]
+crons = ["0 * * * *"]
