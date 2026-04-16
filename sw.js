@@ -1,4 +1,4 @@
-const CACHE = 'timeclock-v8';
+const CACHE = 'timeclock-v9';
 const STATIC_ASSETS = [
   'https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
