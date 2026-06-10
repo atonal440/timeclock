@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import type { Entry } from './utils/timeclock';
 import { parseTimeclockFile, exportTimeclock, fmtDuration,
@@ -49,9 +49,12 @@ export function App() {
   const currentAccount = isClockedIn ? lastEntry.account! : null;
   const runningMs = isClockedIn ? now.getTime() - new Date(lastEntry.datetime).getTime() : 0;
 
-  const allSessions = calcSessions(entries);
-  const days = groupByDay(allSessions);
-  const allProjectNames = Array.from(new Set([...projects, ...allSessions.map(s => s.account)]));
+  const { allSessions, days, allProjectNames } = useMemo(() => {
+    const allSessions = calcSessions(entries);
+    const days = groupByDay(allSessions);
+    const allProjectNames = Array.from(new Set([...projects, ...allSessions.map(s => s.account)]));
+    return { allSessions, days, allProjectNames };
+  }, [entries, projects]);
 
   const todayKey = now.toLocaleDateString('en-CA');
   const todayDay = days.find(d => d.date === todayKey);
