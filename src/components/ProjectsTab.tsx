@@ -10,7 +10,7 @@ interface ProjectsTabProps {
   toggleHidden: (p: string) => void;
   addProject: (p: string) => void;
   doExport: () => void;
-  doImport: (text: string) => void;
+  doImport: (text: string) => boolean;
   clearAll: () => void;
   allSessions: SessionData[];
   days: DayData[];
@@ -30,9 +30,10 @@ export function ProjectsTab({
   };
 
   const handleImport = () => {
-    doImport(importText);
-    setShowImport(false);
-    setImportText('');
+    if (doImport(importText)) {
+      setShowImport(false);
+      setImportText('');
+    }
   };
 
   return (

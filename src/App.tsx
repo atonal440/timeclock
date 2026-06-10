@@ -130,10 +130,10 @@ export function App() {
     });
   }
 
-  function doImport(importText: string) {
+  function doImport(importText: string): boolean {
     try {
       const parsed = parseTimeclockFile(importText);
-      if (!parsed.length) { showToast('No valid entries found.'); return; }
+      if (!parsed.length) { showToast('No valid entries found.'); return false; }
       setEntries(prev => {
         const existing = new Set(prev.map(e => e.datetime + e.type));
         const merged = [...prev, ...parsed.filter(e => !existing.has(e.datetime + e.type))]
@@ -143,8 +143,10 @@ export function App() {
       const accs = parsed.filter(e => e.type === 'i').map(e => e.account!);
       setProjects(prev => Array.from(new Set([...prev, ...accs])));
       showToast(`Imported ${parsed.length} entries.`);
+      return true;
     } catch (e: any) {
       showToast('Parse error: ' + e.message);
+      return false;
     }
   }
 
