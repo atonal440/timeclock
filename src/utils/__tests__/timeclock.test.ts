@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
-import { exportTimeclock, Entry } from '../timeclock';
+import { exportTimeclock, type Entry } from '../timeclock';
 
 describe('exportTimeclock', () => {
   beforeAll(() => {
