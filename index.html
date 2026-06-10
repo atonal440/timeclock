@@ -480,8 +480,9 @@ function App() {
         React.createElement('div', { className:'modal-title', style:{marginBottom:16} }, 'Edit Entry'),
 
         React.createElement('div', { className:'edit-row' },
-          React.createElement('div', { className:'edit-label' }, 'Client / Project'),
+          React.createElement('label', { className:'edit-label', htmlFor:'edit-account' }, 'Client / Project'),
           React.createElement('select', {
+            id: 'edit-account',
             className: 'edit-field',
             value: editSession.account,
             onChange: e => setEditSession(p => ({ ...p, account: e.target.value }))
@@ -495,8 +496,9 @@ function App() {
 
         React.createElement('div', { className:'edit-times' },
           React.createElement('div', { className:'edit-row' },
-            React.createElement('div', { className:'edit-label' }, 'Start'),
+            React.createElement('label', { className:'edit-label', htmlFor:'edit-start-time' }, 'Start'),
             React.createElement('input', {
+              id: 'edit-start-time',
               type: 'time',
               className: 'edit-field',
               value: editSession.startTime,
@@ -504,8 +506,9 @@ function App() {
             })
           ),
           editSession.outIdx !== null && React.createElement('div', { className:'edit-row' },
-            React.createElement('div', { className:'edit-label' }, 'End'),
+            React.createElement('label', { className:'edit-label', htmlFor:'edit-end-time' }, 'End'),
             React.createElement('input', {
+              id: 'edit-end-time',
               type: 'time',
               className: 'edit-field',
               value: editSession.endTime,
@@ -636,12 +639,14 @@ function App() {
                         React.createElement('button', {
                           className:'session-edit',
                           onClick: () => openEdit(s),
-                          title: 'Edit entry'
+                          title: 'Edit entry',
+                          'aria-label': 'Edit session'
                         }, '✎'),
                         React.createElement('button', {
                           className:'session-del',
                           onClick: () => deleteSession(s.inIdx, s.outIdx),
-                          title: 'Delete entry'
+                          title: 'Delete entry',
+                          'aria-label': 'Delete session'
                         }, '×')
                       )
                     )
@@ -679,9 +684,10 @@ function App() {
               value:newProject,
               onChange:e=>setNewProject(e.target.value),
               onKeyDown:e=>e.key==='Enter'&&addProject(),
-              placeholder:'Client:Project'
+              placeholder:'Client:Project',
+              'aria-label': 'New project name'
             }),
-            React.createElement('button', { className:'add-btn', onClick:addProject }, '＋')
+            React.createElement('button', { className:'add-btn', onClick:addProject, 'aria-label': 'Add project' }, '＋')
           ),
           React.createElement('div', { className:'hint' }, 'Use hledger-style names like Client:ProjectTag. Toggle visibility to show or hide projects in the Clock tab.')
         ),
@@ -695,7 +701,8 @@ function App() {
               className:'import-area',
               value:importText,
               onChange:e=>setImportText(e.target.value),
-              placeholder:'i 2024/01/15 09:00:00 Client:Project\no 2024/01/15 17:30:00\n...'
+              placeholder:'i 2024/01/15 09:00:00 Client:Project\no 2024/01/15 17:30:00\n...',
+              'aria-label':'Import timeclock data'
             }),
             React.createElement('button', { className:'confirm-btn', onClick:doImport }, 'Import & Merge'),
             React.createElement('button', { className:'cancel-btn', onClick:()=>{setShowImport(false);setImportText('');} }, 'Cancel')
