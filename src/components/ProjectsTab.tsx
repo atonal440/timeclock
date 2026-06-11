@@ -16,6 +16,8 @@ interface ProjectsTabProps {
   days: DayData[];
 }
 
+declare const __APP_VERSION__: string;
+
 export function ProjectsTab({
   theme, setTheme, allProjectNames, hiddenProjects, toggleHidden,
   addProject, doExport, doImport, clearAll, allSessions, days
@@ -148,6 +150,10 @@ export function ProjectsTab({
             </span>
           </div>
         </div>
+      </div>
+
+      <div style={{ textAlign: 'center', margin: '20px 0', fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
+        Build: {typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'}
       </div>
     </>
   );
