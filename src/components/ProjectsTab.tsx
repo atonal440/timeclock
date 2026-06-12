@@ -25,6 +25,7 @@ export function ProjectsTab({
   const [newProject, setNewProject] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState('');
+  const [showHidden, setShowHidden] = useState(false);
 
   const handleAddProject = () => {
     addProject(newProject);
@@ -62,14 +63,17 @@ export function ProjectsTab({
       <div className="settings-section">
         <div className="section-label">Projects</div>
         <div>
-          {allProjectNames.length > 0 ? (
-            [...allProjectNames].sort().map(name => {
+          {allProjectNames.length > 0 ? (() => {
+            const sorted = [...allProjectNames].sort();
+            const visible = sorted.filter(n => !hiddenProjects.has(n));
+            const hidden  = sorted.filter(n =>  hiddenProjects.has(n));
+
+            const renderRow = (name: string) => {
               const parts = name.split(':');
               const root = parts.length > 1 ? parts[0] + ':' : null;
               const mid = parts.length > 2 ? parts.slice(1, -1).join(':') + ':' : null;
               const leaf = parts[parts.length - 1];
               const isHidden = hiddenProjects.has(name);
-
               return (
                 <div key={name} className="project-flat-row">
                   <span className="project-path">
@@ -86,8 +90,25 @@ export function ProjectsTab({
                   </button>
                 </div>
               );
-            })
-          ) : (
+            };
+
+            return (
+              <>
+                {visible.map(renderRow)}
+                {hidden.length > 0 && (
+                  <>
+                    <button
+                      className="hidden-disclosure"
+                      onClick={() => setShowHidden(s => !s)}
+                    >
+                      {showHidden ? '▾' : '▸'} {hidden.length} hidden
+                    </button>
+                    {showHidden && hidden.map(renderRow)}
+                  </>
+                )}
+              </>
+            );
+          })() : (
             <div className="hint">No projects yet.</div>
           )}
         </div>
