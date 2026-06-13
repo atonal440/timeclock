@@ -4,6 +4,7 @@ import type { Entry } from './utils/timeclock';
 import { parseTimeclockFile, exportTimeclock, fmtDuration,
   calcSessions, groupByDay
 } from './utils/timeclock';
+import { dayThemeFor } from './utils/themes';
 
 import { Nav } from './components/Nav';
 import { ClockTab } from './components/ClockTab';
@@ -38,11 +39,15 @@ export function App() {
     return () => clearInterval(id);
   }, []);
 
+  // In 'daily' mode the active theme follows the weekday and rolls over at
+  // midnight (dayThemeId changes as `now` ticks past midnight).
+  const dayThemeId = dayThemeFor(now).id;
   useEffect(() => {
     const html = document.documentElement;
     if (theme === 'system') html.removeAttribute('data-theme');
+    else if (theme === 'daily') html.setAttribute('data-theme', dayThemeId);
     else html.setAttribute('data-theme', theme);
-  }, [theme]);
+  }, [theme, dayThemeId]);
 
   const lastEntry = entries[entries.length - 1];
   const isClockedIn = lastEntry?.type === 'i';

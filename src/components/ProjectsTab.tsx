@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { DayData, SessionData } from '../utils/timeclock';
 import { fmtDuration } from '../utils/timeclock';
+import { DAY_THEMES, dayThemeFor } from '../utils/themes';
 
 interface ProjectsTabProps {
   theme: string;
@@ -47,7 +48,8 @@ export function ProjectsTab({
           {[
             ['light', '☀ Light'],
             ['system', '⬤ System'],
-            ['dark', '☽ Dark']
+            ['dark', '☽ Dark'],
+            ['daily', '📅 Daily']
           ].map(([val, label]) => (
             <button
               key={val}
@@ -58,6 +60,22 @@ export function ProjectsTab({
             </button>
           ))}
         </div>
+        {theme === 'daily' && (() => {
+          const todayId = dayThemeFor().id;
+          return (
+            <div className="daily-list">
+              <div className="hint" style={{ padding: '10px 2px 8px' }}>
+                A different theme every day of the week. Today it's <strong>{dayThemeFor().name}</strong>.
+              </div>
+              {DAY_THEMES.map(t => (
+                <div key={t.id} className={`daily-row ${t.id === todayId ? 'today' : ''}`}>
+                  <span className="daily-day">{t.day}</span>
+                  <span className="daily-name">{t.name}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="settings-section">

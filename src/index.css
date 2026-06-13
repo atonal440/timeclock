@@ -190,3 +190,211 @@ html, body { background: var(--bg); }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Day-of-week themes (theme = 'daily' rotates through these by weekday).
+   Each block is self-contained — it sets every CSS variable plus any
+   structural flourishes. Selectors are scoped to [data-theme="…"] on <html>,
+   so they out-specify the base rules without needing !important. These come
+   last in the file so they also win source-order ties with the base themes.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Saturday · Lime Terminal (the original dark look) ── */
+[data-theme="lime"] {
+  --bg: #080b12; --surface: #10141e; --surface2: #161b28; --border: #1e2535;
+  --lime: #a3e635; --lime-dim: #4a6e12; --lime-bg: rgba(163,230,53,0.05);
+  --lime-badge-bg: rgba(163,230,53,0.15); --lime-badge-border: rgba(163,230,53,0.2);
+  --amber: #f59e0b; --text: #e8edf5; --muted: #5a6480; --times-color: #3a4460;
+  --nav-bg: rgba(8,11,18,0.95);
+}
+[data-theme="lime"] .time-display.clocked-in { text-shadow: 0 0 30px rgba(163,230,53,0.3); }
+
+/* ── Monday · Indigo Pro ── */
+[data-theme="indigo"] {
+  --bg: #0e1018; --surface: #181b29; --surface2: #1f2336; --border: #2a2f45;
+  --lime: #818cf8; --lime-dim: #4f46e5; --lime-bg: rgba(129,140,248,0.06);
+  --lime-badge-bg: rgba(129,140,248,0.18); --lime-badge-border: rgba(129,140,248,0.45);
+  --amber: #f472b6; --text: #e7e9f3; --muted: #8b8fae; --times-color: #5b6086;
+  --nav-bg: rgba(14,16,24,0.9);
+}
+[data-theme="indigo"] .status-bar,
+[data-theme="indigo"] .project-btn,
+[data-theme="indigo"] .day-card,
+[data-theme="indigo"] .action-btn,
+[data-theme="indigo"] .theme-opt,
+[data-theme="indigo"] .edit-field,
+[data-theme="indigo"] .add-input {
+  border-radius: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+[data-theme="indigo"] .status-bar.active {
+  background: linear-gradient(135deg, rgba(129,140,248,0.14), rgba(99,102,241,0.06));
+  border-color: rgba(129,140,248,0.5);
+}
+[data-theme="indigo"] .project-btn.current { background: rgba(129,140,248,0.12); }
+[data-theme="indigo"] .time-display.clocked-in { color: #a5b4fc; text-shadow: 0 0 26px rgba(129,140,248,0.55); }
+[data-theme="indigo"] .running-time { color: #a5b4fc; }
+
+/* ── Tuesday · Aurora Glass ── */
+[data-theme="aurora"] {
+  --bg: #0b1020; --surface: rgba(255,255,255,0.07); --surface2: rgba(255,255,255,0.1);
+  --border: rgba(255,255,255,0.16); --lime: #5eead4; --lime-dim: rgba(94,234,212,0.5);
+  --lime-bg: rgba(94,234,212,0.1); --lime-badge-bg: rgba(94,234,212,0.18);
+  --lime-badge-border: rgba(94,234,212,0.4); --amber: #fcd34d; --text: #eef2ff;
+  --muted: #9fb0d6; --times-color: #7e8bb5; --nav-bg: rgba(14,20,40,0.55);
+}
+[data-theme="aurora"] body { background: #0b1020; }
+[data-theme="aurora"] .app { background: transparent; }
+[data-theme="aurora"] body::before {
+  content: ''; position: fixed; inset: -20%; z-index: -1; filter: saturate(1.1);
+  background:
+    radial-gradient(40% 35% at 20% 15%, rgba(56,189,248,0.35), transparent 60%),
+    radial-gradient(45% 40% at 85% 10%, rgba(167,139,250,0.4), transparent 60%),
+    radial-gradient(50% 45% at 70% 90%, rgba(45,212,191,0.3), transparent 60%),
+    linear-gradient(160deg, #0b1020, #131a36);
+}
+[data-theme="aurora"] .status-bar,
+[data-theme="aurora"] .project-btn,
+[data-theme="aurora"] .day-card,
+[data-theme="aurora"] .action-btn,
+[data-theme="aurora"] .theme-opt,
+[data-theme="aurora"] .edit-field,
+[data-theme="aurora"] .add-input {
+  backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-radius: 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18);
+}
+[data-theme="aurora"] .status-bar.active { background: rgba(94,234,212,0.1); border-color: rgba(94,234,212,0.4); }
+[data-theme="aurora"] .nav { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+[data-theme="aurora"] .time-display.clocked-in { color: #5eead4; text-shadow: 0 0 24px rgba(94,234,212,0.5); }
+
+/* ── Wednesday · Sunset Warmth ── */
+[data-theme="sunset"] {
+  --bg: #fff1e6; --surface: rgba(255,255,255,0.72); --surface2: rgba(255,255,255,0.85);
+  --border: rgba(255,255,255,0.6); --text: #5a2a3a; --muted: #a86b6b; --lime: #c2410c;
+  --lime-dim: #fb923c; --lime-bg: rgba(194,65,12,0.06); --lime-badge-bg: rgba(194,65,12,0.14);
+  --lime-badge-border: rgba(251,146,60,0.6); --amber: #be123c; --times-color: #c98a8a;
+  --nav-bg: rgba(255,241,230,0.7);
+}
+[data-theme="sunset"] body { background: #fff1e6; }
+[data-theme="sunset"] .app { background: transparent; }
+[data-theme="sunset"] body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(165deg, #ffd9a0 0%, #ffb38a 30%, #ff8f9c 70%, #f06595 100%);
+}
+[data-theme="sunset"] .status-bar,
+[data-theme="sunset"] .project-btn,
+[data-theme="sunset"] .day-card,
+[data-theme="sunset"] .action-btn,
+[data-theme="sunset"] .theme-opt,
+[data-theme="sunset"] .edit-field,
+[data-theme="sunset"] .add-input {
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px; box-shadow: 0 10px 24px rgba(192,64,30,0.18);
+}
+[data-theme="sunset"] .nav { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+[data-theme="sunset"] .status-bar.active { background: rgba(255,255,255,0.85); border-color: rgba(251,146,60,0.7); }
+[data-theme="sunset"] .time-display.clocked-in { color: #c2410c; text-shadow: none; }
+
+/* ── Thursday · CRT Terminal ── */
+[data-theme="crt"] {
+  --bg: #020402; --surface: #06120a; --surface2: #0a1c10; --border: #10391f;
+  --text: #3bff7a; --muted: #1f8a45; --lime: #54ff8f; --lime-dim: #1f8a45;
+  --lime-bg: rgba(84,255,143,0.05); --lime-badge-bg: rgba(84,255,143,0.14);
+  --lime-badge-border: #1f8a45; --amber: #aaff00; --times-color: #177a3a;
+  --nav-bg: rgba(2,4,2,0.92);
+}
+[data-theme="crt"] .app { font-family: var(--mono); }
+[data-theme="crt"] .app::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 60; mix-blend-mode: multiply;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.28) 2px 4px);
+}
+[data-theme="crt"] .app::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 59;
+  background: radial-gradient(120% 80% at 50% 50%, transparent 55%, rgba(0,0,0,0.55));
+}
+[data-theme="crt"] .time-display,
+[data-theme="crt"] .project-name,
+[data-theme="crt"] .status-account,
+[data-theme="crt"] .running-time,
+[data-theme="crt"] .day-total,
+[data-theme="crt"] .nav-icon { text-shadow: 0 0 8px currentColor; }
+[data-theme="crt"] .section-label,
+[data-theme="crt"] .date-line,
+[data-theme="crt"] .status-label,
+[data-theme="crt"] .nav-label { text-transform: uppercase; }
+[data-theme="crt"] .status-bar,
+[data-theme="crt"] .project-btn,
+[data-theme="crt"] .day-card,
+[data-theme="crt"] .nav,
+[data-theme="crt"] .action-btn,
+[data-theme="crt"] .theme-opt,
+[data-theme="crt"] .edit-field,
+[data-theme="crt"] .add-input,
+[data-theme="crt"] .project-badge { border-radius: 2px; }
+[data-theme="crt"] .time-display.clocked-in { color: #54ff8f; text-shadow: 0 0 14px #54ff8f; }
+
+/* ── Friday · Neo-Brutalist ── */
+[data-theme="brutal"] {
+  --bg: #ffe14d; --surface: #fff; --surface2: #fff; --border: #111; --text: #111;
+  --muted: #555; --lime: #1f6feb; --lime-dim: #111; --lime-bg: rgba(31,111,235,0.06);
+  --lime-badge-bg: #1f6feb; --lime-badge-border: #111; --amber: #e11d48;
+  --times-color: #777; --nav-bg: #fff;
+}
+[data-theme="brutal"] .status-bar,
+[data-theme="brutal"] .project-btn,
+[data-theme="brutal"] .day-card,
+[data-theme="brutal"] .nav,
+[data-theme="brutal"] .action-btn,
+[data-theme="brutal"] .theme-opt,
+[data-theme="brutal"] .edit-field,
+[data-theme="brutal"] .add-input {
+  border: 3px solid #111; border-radius: 0; box-shadow: 5px 5px 0 #111;
+}
+[data-theme="brutal"] .status-bar.active { background: #c6f68d; }
+[data-theme="brutal"] .project-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #111; }
+[data-theme="brutal"] .section-label,
+[data-theme="brutal"] .status-label,
+[data-theme="brutal"] .nav-label,
+[data-theme="brutal"] .date-line { font-weight: 800; color: #111; }
+[data-theme="brutal"] .project-badge { background: #1f6feb; color: #fff; border: 2px solid #111; border-radius: 0; }
+[data-theme="brutal"] .running-time,
+[data-theme="brutal"] .day-total { color: #e11d48; }
+[data-theme="brutal"] .nav { box-shadow: 0 -3px 0 #111; }
+[data-theme="brutal"] .clock-out-btn { background: #e11d48; color: #fff; border: 3px solid #111; border-radius: 0; box-shadow: 3px 3px 0 #111; }
+[data-theme="brutal"] .time-display.clocked-in { color: #1f6feb; text-shadow: none; }
+
+/* ── Sunday · Soft Clay ── */
+[data-theme="clay"] {
+  --bg: #e8e6ff; --surface: #efeefe; --surface2: #f6f5ff; --border: transparent;
+  --text: #3a2e6b; --muted: #8b83bd; --lime: #7c5cff; --lime-dim: #b9aaff;
+  --lime-bg: rgba(124,92,255,0.06); --lime-badge-bg: #7c5cff; --lime-badge-border: transparent;
+  --amber: #ef6aa8; --times-color: #a99fd6; --nav-bg: rgba(232,230,255,0.85);
+}
+[data-theme="clay"] .status-bar,
+[data-theme="clay"] .project-btn,
+[data-theme="clay"] .day-card,
+[data-theme="clay"] .action-btn,
+[data-theme="clay"] .theme-opt,
+[data-theme="clay"] .edit-field,
+[data-theme="clay"] .add-input,
+[data-theme="clay"] .nav {
+  border: none; border-radius: 24px;
+  box-shadow: 8px 8px 18px rgba(160,150,210,0.55), -8px -8px 18px rgba(255,255,255,0.9);
+}
+[data-theme="clay"] .status-bar.active {
+  background: #f1ecff;
+  box-shadow: inset 6px 6px 12px rgba(160,150,210,0.4), inset -6px -6px 12px #fff;
+}
+[data-theme="clay"] .project-btn:active {
+  box-shadow: inset 5px 5px 12px rgba(160,150,210,0.5), inset -5px -5px 12px #fff; transform: none;
+}
+[data-theme="clay"] .project-badge { background: #7c5cff; color: #fff; border: none; box-shadow: 2px 2px 6px rgba(124,92,255,0.5); }
+[data-theme="clay"] .time-display.clocked-in { color: #7c5cff; text-shadow: none; }
+[data-theme="clay"] .nav { border-radius: 24px 24px 0 0; }
+
+/* ── Daily-mode preview list (Projects → Appearance) ── */
+.daily-list { margin-top: 4px; }
+.daily-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; }
+.daily-row.today { background: var(--lime-bg); border: 1px solid var(--lime-dim); }
+.daily-day { font-size: 13px; color: var(--muted); }
+.daily-row.today .daily-day { color: var(--lime); font-weight: 600; }
+.daily-name { font-family: var(--mono); font-size: 12px; color: var(--text); }
