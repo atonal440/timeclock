@@ -238,12 +238,18 @@ html, body { background: var(--bg); }
 [data-theme^="indigo-"] .status-bar.active {
   border-color: var(--accent-edge);
   box-shadow: 0 6px 18px var(--shadow-col), 0 0 0 1px var(--accent-edge), 0 0 26px var(--accent-glow);
-  animation: indigoPulse 2.6s ease-in-out infinite;
 }
-/* Slow "this is live" breathing on the running-session card. */
+/* "This is live" breathing on the running-session card. Dark breathes its
+   glow; light thickens its edge stroke instead (glow reads poorly on light). */
+[data-theme="indigo-dark"]  .status-bar.active { animation: indigoPulse  2.6s ease-in-out infinite; }
+[data-theme="indigo-light"] .status-bar.active { animation: indigoStroke 2.6s ease-in-out infinite; }
 @keyframes indigoPulse {
   0%, 100% { box-shadow: 0 6px 18px var(--shadow-col), 0 0 0 1px var(--accent-edge), 0 0 14px var(--accent-glow); }
   50%      { box-shadow: 0 6px 18px var(--shadow-col), 0 0 0 1px var(--accent-edge), 0 0 36px var(--accent-glow); }
+}
+@keyframes indigoStroke {
+  0%, 100% { box-shadow: 0 6px 18px var(--shadow-col), 0 0 0 1px   var(--accent-edge); }
+  50%      { box-shadow: 0 6px 18px var(--shadow-col), 0 0 0 3.5px var(--accent-edge); }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-theme^="indigo-"] .status-bar.active { animation: none; }

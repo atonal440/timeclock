@@ -24,7 +24,8 @@ const SEED = () => {
   localStorage.setItem('tc-theme', 'daily');
 };
 
-const PERIOD = 2.6;       // matches @keyframes indigoPulse duration
+const THEME = process.argv[2] || 'indigo-dark';
+const PERIOD = 2.6;       // matches the @keyframes duration
 const N = 26;             // frames across one cycle
 const CLIP = { x: 0, y: 0, width: 390, height: 300 };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -38,7 +39,7 @@ const page = await ctx.newPage();
 await page.goto(URL, { waitUntil: 'networkidle' });
 await page.evaluate(SEED);
 await page.goto(URL, { waitUntil: 'networkidle' });
-await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'indigo-dark'));
+await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), THEME);
 await page.locator('.nav-btn').nth(0).click();
 await sleep(400);
 
@@ -66,6 +67,6 @@ frames.forEach((f, i) => {
   gif.writeFrame(index, width, height, { palette, delay, repeat: i === 0 ? 0 : undefined });
 });
 gif.finish();
-const out = join(OUT, 'indigo-dark-pulse.gif');
+const out = join(OUT, `${THEME}-pulse.gif`);
 fs.writeFileSync(out, gif.bytes());
 console.log('wrote', out, `${width}x${height}`, N, 'frames', Math.round(fs.statSync(out).size/1024)+'KB');
