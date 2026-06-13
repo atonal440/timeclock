@@ -257,7 +257,7 @@ html, body { background: var(--bg); }
 [data-theme^="indigo-"] .project-btn.current {
   background: var(--current-bg);
   border-color: var(--accent-edge);
-  box-shadow: 0 0 0 1px var(--accent-edge), 0 0 22px var(--accent-glow);
+  box-shadow: 0 0 0 1px var(--accent-edge);
 }
 [data-theme^="indigo-"] .project-badge {
   background: var(--lime); color: var(--badge-ink);

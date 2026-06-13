@@ -1,5 +1,11 @@
 # Theme design — working notes & backlog
 
+## Principles
+- **One live indicator per screen.** Only the **session card**
+  (`.status-bar.active`) carries motion + glow. The current task button
+  (`.project-btn.current`) is marked statically (brighter fill + 1px ring +
+  NOW badge) — distinct but quiet, so it doesn't compete with the card.
+
 ## Deferred ideas
 - **Animated green gradient on active buttons** (other themes): animate a
   flowing green gradient across the active/clocked-in buttons. Revisit when we
