@@ -233,19 +233,38 @@ html, body { background: var(--bg); }
 [data-theme^="indigo-"] .edit-field,
 [data-theme^="indigo-"] .add-input { border-radius:14px; box-shadow:0 6px 18px var(--shadow-col); }
 [data-theme^="indigo-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 26px var(--accent-glow); }
+/* Active-job highlight: brighter fill + glowing edge ring on the running
+   session card, the current project row, and the NOW badge. */
+[data-theme^="indigo-"] .status-bar.active {
+  border-color: var(--accent-edge);
+  box-shadow: 0 6px 18px var(--shadow-col), 0 0 0 1px var(--accent-edge), 0 0 26px var(--accent-glow);
+}
+[data-theme^="indigo-"] .project-btn.current {
+  background: var(--current-bg);
+  border-color: var(--accent-edge);
+  box-shadow: 0 0 0 1px var(--accent-edge), 0 0 22px var(--accent-glow);
+}
+[data-theme^="indigo-"] .project-badge {
+  background: var(--lime); color: var(--badge-ink);
+  border-color: transparent; box-shadow: 0 0 12px var(--accent-glow);
+}
+[data-theme^="indigo-"] .running-time,
+[data-theme^="indigo-"] .status-account { text-shadow: 0 0 18px var(--accent-glow); }
 [data-theme="indigo-dark"] {
   --bg:#0e1018; --surface:#181b29; --surface2:#1f2336; --border:#2a2f45;
   --text:#e7e9f3; --muted:#8b8fae; --times-color:#5b6086; --nav-bg:rgba(14,16,24,0.9);
-  --lime:#a5b4fc; --lime-dim:#4f46e5; --lime-bg:rgba(129,140,248,0.1);
+  --lime:#c7d2fe; --lime-dim:#6366f1; --lime-bg:rgba(129,140,248,0.14);
   --lime-badge-bg:rgba(129,140,248,0.18); --lime-badge-border:rgba(129,140,248,0.45);
-  --amber:#f472b6; --shadow-col:rgba(0,0,0,0.35); --accent-glow:rgba(129,140,248,0.55);
+  --amber:#f472b6; --shadow-col:rgba(0,0,0,0.35); --accent-glow:rgba(129,140,248,0.7);
+  --accent-edge:#818cf8; --current-bg:rgba(129,140,248,0.2); --badge-ink:#0b0d16;
 }
 [data-theme="indigo-light"] {
   --bg:#eef0f7; --surface:#ffffff; --surface2:#f4f5fb; --border:#dfe2ee;
   --text:#23263a; --muted:#737896; --times-color:#aab0c8; --nav-bg:rgba(238,240,247,0.9);
   --lime:#4f46e5; --lime-dim:#a5b4fc; --lime-bg:rgba(79,70,229,0.07);
   --lime-badge-bg:rgba(79,70,229,0.12); --lime-badge-border:rgba(79,70,229,0.3);
-  --amber:#db2777; --shadow-col:rgba(80,90,140,0.18); --accent-glow:rgba(79,70,229,0.25);
+  --amber:#db2777; --shadow-col:rgba(80,90,140,0.18); --accent-glow:rgba(79,70,229,0.22);
+  --accent-edge:#6366f1; --current-bg:rgba(79,70,229,0.1); --badge-ink:#ffffff;
 }
 
 /* ─────────────────────────  AURORA · glass  ─────────────────────────────── */
