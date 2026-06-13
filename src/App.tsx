@@ -4,7 +4,7 @@ import type { Entry } from './utils/timeclock';
 import { parseTimeclockFile, exportTimeclock, fmtDuration,
   calcSessions, groupByDay
 } from './utils/timeclock';
-import { dayThemeFor } from './utils/themes';
+import { conceptFor, themeId } from './utils/themes';
 
 import { Nav } from './components/Nav';
 import { ClockTab } from './components/ClockTab';
@@ -39,15 +39,27 @@ export function App() {
     return () => clearInterval(id);
   }, []);
 
-  // In 'daily' mode the active theme follows the weekday and rolls over at
-  // midnight (dayThemeId changes as `now` ticks past midnight).
-  const dayThemeId = dayThemeFor(now).id;
+  // Track the OS light/dark preference so 'daily' mode can pick the matching
+  // scheme from each day's light/dark pair.
+  const [prefersDark, setPrefersDark] = useState(
+    () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (e: MediaQueryListEvent) => setPrefersDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  // In 'daily' mode the concept follows the weekday (rolls over at midnight as
+  // `now` ticks past it) and the scheme follows the OS preference.
+  const dailyTheme = themeId(conceptFor(now).id, prefersDark ? 'dark' : 'light');
   useEffect(() => {
     const html = document.documentElement;
     if (theme === 'system') html.removeAttribute('data-theme');
-    else if (theme === 'daily') html.setAttribute('data-theme', dayThemeId);
+    else if (theme === 'daily') html.setAttribute('data-theme', dailyTheme);
     else html.setAttribute('data-theme', theme);
-  }, [theme, dayThemeId]);
+  }, [theme, dailyTheme]);
 
   const lastEntry = entries[entries.length - 1];
   const isClockedIn = lastEntry?.type === 'i';

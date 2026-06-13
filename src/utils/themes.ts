@@ -1,15 +1,25 @@
-// Day-of-week theme rotation. getDay() → 0=Sunday .. 6=Saturday, so the
-// array index lines up directly with the JS weekday number.
-export interface DayTheme {
+// ── Day-of-week theme system ────────────────────────────────────────────────
+// Each "concept" is a button/card *treatment* (shape, shadow, effects) that is
+// shared by a paired light + dark color scheme. That gives 7 concepts × 2
+// schemes = 14 themes. In 'daily' mode the concept follows the weekday and the
+// light/dark scheme follows the OS preference, so the pairing does the work.
+//
+// data-theme values written to <html> are `${concept.id}-${scheme}`, e.g.
+// "aurora-dark", matching the blocks in index.css.
+
+export type Scheme = 'light' | 'dark';
+
+export interface Concept {
   /** weekday name, for display */
   day: string;
-  /** value written to <html data-theme="…">, matches a block in index.css */
+  /** treatment id; combines with a scheme to form the data-theme value */
   id: string;
-  /** human-friendly theme name */
+  /** human-friendly name */
   name: string;
 }
 
-export const DAY_THEMES: DayTheme[] = [
+// Index lines up with Date.getDay() (0 = Sunday … 6 = Saturday).
+export const DAY_CONCEPTS: Concept[] = [
   { day: 'Sunday',    id: 'clay',   name: 'Soft Clay' },
   { day: 'Monday',    id: 'indigo', name: 'Indigo Pro' },
   { day: 'Tuesday',   id: 'aurora', name: 'Aurora Glass' },
@@ -19,7 +29,12 @@ export const DAY_THEMES: DayTheme[] = [
   { day: 'Saturday',  id: 'lime',   name: 'Lime Terminal' },
 ];
 
-/** The day-theme for a given date (defaults to today). */
-export function dayThemeFor(date = new Date()): DayTheme {
-  return DAY_THEMES[date.getDay()];
+/** The concept for a given date (defaults to today). */
+export function conceptFor(date = new Date()): Concept {
+  return DAY_CONCEPTS[date.getDay()];
+}
+
+/** Build the data-theme value for a concept + scheme. */
+export function themeId(conceptId: string, scheme: Scheme): string {
+  return `${conceptId}-${scheme}`;
 }
