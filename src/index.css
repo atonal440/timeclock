@@ -471,7 +471,7 @@ html, body { background: var(--bg); }
   --lime:#7c5cff; --lime-dim:#b9aaff; --lime-bg:rgba(124,92,255,0.06);
   --lime-badge-bg:#7c5cff; --lime-badge-border:transparent; --amber:#ef6aa8;
   --neu-d:rgba(160,150,210,0.55); --neu-l:rgba(255,255,255,0.9); --ink-on-accent:#ffffff; --accent-glow:rgba(124,92,255,0.5);
-  --inset-edge:transparent;
+  --inset-edge:rgba(124,92,255,0.55);
 }
 
 /* ── Daily-mode preview list (Projects → Appearance) ── */

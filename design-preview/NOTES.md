@@ -16,7 +16,8 @@
   invisible highlight, surface≈bg). Added an **inset accent ring**
   (`inset 0 0 0 1.5px var(--inset-edge)`, `--inset-edge:var(--lime-dim)`) to
   define the edge while keeping the recess; bumped `--neu-l` .05→.07 so the
-  recess actually reads. `clay-light` opts out via `--inset-edge:transparent`.
+  recess actually reads. `clay-light` uses a soft ring too
+  (`--inset-edge:rgba(124,92,255,.55)`), softened by the bright highlight wash.
   The recessed feel comes from the inset shadow *pair* (dark top-left / light
   bottom-right = inverse of raised); the ring only supplies a crisp perimeter.
 - **Indigo · dark** — brighter active-job highlight (glowing edge ring on the
