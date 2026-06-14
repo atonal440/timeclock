@@ -452,7 +452,7 @@ html, body { background: var(--bg); }
 [data-theme^="clay-"] .edit-field,
 [data-theme^="clay-"] .add-input,
 [data-theme^="clay-"] .nav { border:none; border-radius:24px; box-shadow:8px 8px 18px var(--neu-d), -8px -8px 18px var(--neu-l); }
-[data-theme^="clay-"] .status-bar.active { background:var(--surface2); box-shadow: inset 6px 6px 12px var(--neu-d), inset -6px -6px 12px var(--neu-l); }
+[data-theme^="clay-"] .status-bar.active { background:var(--surface2); box-shadow: inset 6px 6px 12px var(--neu-d), inset -6px -6px 12px var(--neu-l), inset 0 0 0 1.5px var(--inset-edge); }
 [data-theme^="clay-"] .project-btn:active { box-shadow: inset 5px 5px 12px var(--neu-d), inset -5px -5px 12px var(--neu-l); transform:none; }
 [data-theme^="clay-"] .project-badge { background:var(--lime); color:var(--ink-on-accent); border:none; box-shadow:2px 2px 6px var(--accent-glow); }
 [data-theme^="clay-"] .nav { border-radius:24px 24px 0 0; }
@@ -462,7 +462,8 @@ html, body { background: var(--bg); }
   --text:#d6d8e6; --muted:#8a8da0; --times-color:#5d6072; --nav-bg:rgba(35,37,46,0.85);
   --lime:#a78bfa; --lime-dim:#7c6bd6; --lime-bg:rgba(167,139,250,0.08);
   --lime-badge-bg:#a78bfa; --lime-badge-border:transparent; --amber:#f0789f;
-  --neu-d:rgba(0,0,0,0.5); --neu-l:rgba(255,255,255,0.05); --ink-on-accent:#1a1320; --accent-glow:rgba(167,139,250,0.45);
+  --neu-d:rgba(0,0,0,0.5); --neu-l:rgba(255,255,255,0.07); --ink-on-accent:#1a1320; --accent-glow:rgba(167,139,250,0.45);
+  --inset-edge:var(--lime-dim);
 }
 [data-theme="clay-light"] {
   --bg:#e8e6ff; --surface:#efeefe; --surface2:#f1ecff; --border:transparent;
@@ -470,6 +471,7 @@ html, body { background: var(--bg); }
   --lime:#7c5cff; --lime-dim:#b9aaff; --lime-bg:rgba(124,92,255,0.06);
   --lime-badge-bg:#7c5cff; --lime-badge-border:transparent; --amber:#ef6aa8;
   --neu-d:rgba(160,150,210,0.55); --neu-l:rgba(255,255,255,0.9); --ink-on-accent:#ffffff; --accent-glow:rgba(124,92,255,0.5);
+  --inset-edge:transparent;
 }
 
 /* ── Daily-mode preview list (Projects → Appearance) ── */

@@ -12,6 +12,13 @@
   get to those themes. (Indigo uses a glow pulse instead — see below.)
 
 ## Done
+- **Soft Clay · dark** — active session card was disappearing (no border,
+  invisible highlight, surface≈bg). Added an **inset accent ring**
+  (`inset 0 0 0 1.5px var(--inset-edge)`, `--inset-edge:var(--lime-dim)`) to
+  define the edge while keeping the recess; bumped `--neu-l` .05→.07 so the
+  recess actually reads. `clay-light` opts out via `--inset-edge:transparent`.
+  The recessed feel comes from the inset shadow *pair* (dark top-left / light
+  bottom-right = inverse of raised); the ring only supplies a crisp perimeter.
 - **Indigo · dark** — brighter active-job highlight (glowing edge ring on the
   running-session card + current project row, solid periwinkle NOW pill,
   brighter accent). Running-session card breathes its **glow**
