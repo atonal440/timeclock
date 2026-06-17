@@ -25,7 +25,7 @@ const SEED = () => {
 };
 
 const THEME = process.argv[2] || 'indigo-dark';
-const PERIOD = 2.6;       // matches the @keyframes duration
+const PERIOD = parseFloat(process.argv[3]) || 2.6;  // match the @keyframes duration
 const N = 26;             // frames across one cycle
 const CLIP = { x: 0, y: 0, width: 390, height: 300 };
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));

@@ -452,7 +452,20 @@ html, body { background: var(--bg); }
 [data-theme^="clay-"] .edit-field,
 [data-theme^="clay-"] .add-input,
 [data-theme^="clay-"] .nav { border:none; border-radius:24px; box-shadow:8px 8px 18px var(--neu-d), -8px -8px 18px var(--neu-l); }
-[data-theme^="clay-"] .status-bar.active { background:var(--surface2); box-shadow: inset 6px 6px 12px var(--neu-d), inset -6px -6px 12px var(--neu-l), inset 0 0 0 1.5px var(--inset-edge); }
+[data-theme^="clay-"] .status-bar.active {
+  background:var(--surface2);
+  box-shadow: inset 6px 6px 12px var(--neu-d), inset -6px -6px 12px var(--neu-l), inset 0 0 0 1.5px var(--inset-edge);
+  animation: clayBreathe 2.8s ease-in-out infinite;
+}
+/* Tactile "live" breath: the recess presses deeper while the accent ring
+   thickens + brightens, as one motion. Scheme-agnostic (pure shadow). */
+@keyframes clayBreathe {
+  0%, 100% { box-shadow: inset 6px 6px 12px var(--neu-d),   inset -6px -6px 12px var(--neu-l),   inset 0 0 0 1.5px var(--inset-edge); }
+  50%      { box-shadow: inset 13px 13px 26px var(--neu-d), inset -13px -13px 26px var(--neu-l), inset 0 0 0 3px var(--lime); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="clay-"] .status-bar.active { animation: none; }
+}
 [data-theme^="clay-"] .project-btn:active { box-shadow: inset 5px 5px 12px var(--neu-d), inset -5px -5px 12px var(--neu-l); transform:none; }
 [data-theme^="clay-"] .project-badge { background:var(--lime); color:var(--ink-on-accent); border:none; box-shadow:2px 2px 6px var(--accent-glow); }
 [data-theme^="clay-"] .nav { border-radius:24px 24px 0 0; }

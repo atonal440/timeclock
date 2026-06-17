@@ -20,6 +20,9 @@
   (`--inset-edge:rgba(124,92,255,.55)`), softened by the bright highlight wash.
   The recessed feel comes from the inset shadow *pair* (dark top-left / light
   bottom-right = inverse of raised); the ring only supplies a crisp perimeter.
+  Active card breathes via **`clayBreathe`** (2.8s): recess presses deeper
+  (6→13px) while the ring thickens+brightens (1.5px dim → 3px `--lime`), one
+  scheme-agnostic motion; disabled under `prefers-reduced-motion`.
 - **Indigo · dark** — brighter active-job highlight (glowing edge ring on the
   running-session card + current project row, solid periwinkle NOW pill,
   brighter accent). Running-session card breathes its **glow**
