@@ -18,6 +18,10 @@
   likely as a *subtler* cue than the session card.
 
 ## Done
+- **CRT Terminal** — active card combines two cues: a constant **scanline roll**
+  (`::after`, `crtRoll` 1.1s, color `--scanline`) and a periodic **phosphor
+  sweep** (`::before`, `crtSweep` 3.6s, color `--sweep`). Green on dark, amber on
+  light. Reduced-motion disables both (and hides the sweep).
 - **Sunset Warmth** — active card has a **golden-hour glow**: a warm sun-glow
   (`--sun-core`/`--sun-mid`) pooled low in the card on `.status-bar.active::before`,
   swelling + drifting sideways via `sunsetGlow` 10s alternate. Conceptual sibling
