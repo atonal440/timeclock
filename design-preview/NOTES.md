@@ -18,6 +18,13 @@
   likely as a *subtler* cue than the session card.
 
 ## Done
+- **Neo-Brutalist** — active card: the CLOCKED-IN label hard-blinks as a filled
+  accent chip (`brutalBlink` 0.9s, blunt on/off, no easing) — motion that suits
+  the hard-edged aesthetic instead of a smooth breath. Reduced-motion → steady
+  filled chip.
+- **Theme picker buttons** (`.concept-opt`) now inherit each concept's button
+  treatment (added to every treatment selector list), so the picker matches all
+  other buttons — brutalist hard shadows, clay neumorphism, glass blur, etc.
 - **Lime Terminal** — active card shows a blinking **terminal block cursor**
   after the running session's account (`.status-account::after`, `limeBlink`
   1.1s square blink), like a live prompt. Glows on dark (`--accent-glow`), flat

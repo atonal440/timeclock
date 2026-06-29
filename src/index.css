@@ -238,7 +238,8 @@ html, body { background: var(--bg); }
 [data-theme^="indigo-"] .action-btn,
 [data-theme^="indigo-"] .theme-opt,
 [data-theme^="indigo-"] .edit-field,
-[data-theme^="indigo-"] .add-input { border-radius:14px; box-shadow:0 6px 18px var(--shadow-col); }
+[data-theme^="indigo-"] .add-input,
+[data-theme^="indigo-"] .concept-opt { border-radius:14px; box-shadow:0 6px 18px var(--shadow-col); }
 [data-theme^="indigo-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 26px var(--accent-glow); }
 /* Active-job highlight: brighter fill + glowing edge ring on the running
    session card, the current project row, and the NOW badge. */
@@ -301,7 +302,8 @@ html, body { background: var(--bg); }
 [data-theme^="aurora-"] .action-btn,
 [data-theme^="aurora-"] .theme-opt,
 [data-theme^="aurora-"] .edit-field,
-[data-theme^="aurora-"] .add-input {
+[data-theme^="aurora-"] .add-input,
+[data-theme^="aurora-"] .concept-opt {
   backdrop-filter:blur(16px) saturate(1.4); -webkit-backdrop-filter:blur(16px) saturate(1.4);
   border-radius:18px; box-shadow:0 8px 30px var(--shadow-col), inset 0 1px 0 var(--glass-rim);
 }
@@ -365,7 +367,8 @@ html, body { background: var(--bg); }
 [data-theme^="sunset-"] .action-btn,
 [data-theme^="sunset-"] .theme-opt,
 [data-theme^="sunset-"] .edit-field,
-[data-theme^="sunset-"] .add-input {
+[data-theme^="sunset-"] .add-input,
+[data-theme^="sunset-"] .concept-opt {
   backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   border-radius:20px; box-shadow:0 10px 24px var(--shadow-col);
 }
@@ -436,6 +439,7 @@ html, body { background: var(--bg); }
 [data-theme^="crt-"] .theme-opt,
 [data-theme^="crt-"] .edit-field,
 [data-theme^="crt-"] .add-input,
+[data-theme^="crt-"] .concept-opt,
 [data-theme^="crt-"] .project-badge { border-radius:2px; }
 [data-theme^="crt-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 14px var(--lime); }
 /* Active "live" cue: the running-session card both refreshes (scanlines roll,
@@ -483,7 +487,8 @@ html, body { background: var(--bg); }
 [data-theme^="brutal-"] .action-btn,
 [data-theme^="brutal-"] .theme-opt,
 [data-theme^="brutal-"] .edit-field,
-[data-theme^="brutal-"] .add-input { border:3px solid var(--hard-ink); border-radius:0; box-shadow:5px 5px 0 var(--hard-ink); }
+[data-theme^="brutal-"] .add-input,
+[data-theme^="brutal-"] .concept-opt { border:3px solid var(--hard-ink); border-radius:0; box-shadow:5px 5px 0 var(--hard-ink); }
 [data-theme^="brutal-"] .status-bar.active { background: var(--brutal-active); }
 [data-theme^="brutal-"] .project-btn:active { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--hard-ink); }
 [data-theme^="brutal-"] .section-label,
@@ -496,6 +501,21 @@ html, body { background: var(--bg); }
 [data-theme^="brutal-"] .nav { box-shadow:0 -3px 0 var(--hard-ink); }
 [data-theme^="brutal-"] .clock-out-btn { background:var(--amber); color:var(--ink-on-accent); border:3px solid var(--hard-ink); border-radius:0; box-shadow:3px 3px 0 var(--hard-ink); }
 [data-theme^="brutal-"] .time-display.clocked-in { color:var(--lime); text-shadow:none; }
+/* Active "live" cue: the CLOCKED-IN label hard-blinks as a filled accent chip —
+   blunt on/off, no easing, in keeping with the hard-edged aesthetic. */
+[data-theme^="brutal-"] .status-bar.active .status-label {
+  display:inline-block; padding:2px 7px; border:2px solid var(--hard-ink);
+  animation: brutalBlink 0.9s infinite;
+}
+@keyframes brutalBlink {
+  0%, 50%    { background: var(--lime); color: var(--ink-on-accent); }
+  50.01%, 100% { background: transparent; color: var(--text); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="brutal-"] .status-bar.active .status-label {
+    animation: none; background: var(--lime); color: var(--ink-on-accent);
+  }
+}
 [data-theme="brutal-dark"] {
   --bg:#0c0c0f; --surface:#16161c; --surface2:#1c1c24; --border:#f5f5f5;
   --text:#f5f5f5; --muted:#9a9aa5; --times-color:#6a6a76; --nav-bg:#0c0c0f;
@@ -519,6 +539,7 @@ html, body { background: var(--bg); }
 [data-theme^="clay-"] .theme-opt,
 [data-theme^="clay-"] .edit-field,
 [data-theme^="clay-"] .add-input,
+[data-theme^="clay-"] .concept-opt,
 [data-theme^="clay-"] .nav { border:none; border-radius:24px; box-shadow:8px 8px 18px var(--neu-d), -8px -8px 18px var(--neu-l); }
 [data-theme^="clay-"] .status-bar.active {
   background:var(--surface2);
