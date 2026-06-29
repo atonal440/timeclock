@@ -1,10 +1,13 @@
 import { useState } from "react";
 import type { DayData, SessionData } from '../utils/timeclock';
 import { fmtDuration } from '../utils/timeclock';
+import { DAY_CONCEPTS, conceptFor } from '../utils/themes';
 
 interface ProjectsTabProps {
-  theme: string;
-  setTheme: (t: string) => void;
+  concept: string;
+  setConcept: (c: string) => void;
+  scheme: string;
+  setScheme: (s: string) => void;
   allProjectNames: string[];
   hiddenProjects: Set<string>;
   toggleHidden: (p: string) => void;
@@ -19,7 +22,7 @@ interface ProjectsTabProps {
 declare const __APP_VERSION__: string;
 
 export function ProjectsTab({
-  theme, setTheme, allProjectNames, hiddenProjects, toggleHidden,
+  concept, setConcept, scheme, setScheme, allProjectNames, hiddenProjects, toggleHidden,
   addProject, doExport, doImport, clearAll, allSessions, days
 }: ProjectsTabProps) {
   const [newProject, setNewProject] = useState('');
@@ -42,7 +45,7 @@ export function ProjectsTab({
   return (
     <>
       <div className="settings-section">
-        <div className="section-label">Appearance</div>
+        <div className="section-label">Color scheme</div>
         <div className="theme-toggle">
           {[
             ['light', '☀ Light'],
@@ -51,12 +54,37 @@ export function ProjectsTab({
           ].map(([val, label]) => (
             <button
               key={val}
-              className={`theme-opt ${theme === val ? 'active' : ''}`}
-              onClick={() => setTheme(val)}
+              className={`theme-opt ${scheme === val ? 'active' : ''}`}
+              onClick={() => setScheme(val)}
             >
               {label}
             </button>
           ))}
+        </div>
+
+        <div className="section-label" style={{ marginTop: 18 }}>Theme</div>
+        <div className="concept-grid">
+          <button
+            className={`concept-opt ${concept === 'auto' ? 'active' : ''}`}
+            onClick={() => setConcept('auto')}
+          >
+            <span className="concept-name">Auto</span>
+            <span className="concept-day">today · {conceptFor().name}</span>
+          </button>
+          {DAY_CONCEPTS.map(c => (
+            <button
+              key={c.id}
+              className={`concept-opt ${concept === c.id ? 'active' : ''}`}
+              onClick={() => setConcept(c.id)}
+            >
+              <span className="concept-name">{c.name}</span>
+              <span className="concept-day">{c.day}</span>
+            </button>
+          ))}
+        </div>
+        <div className="hint">
+          Scheme and theme are independent. <strong>Auto</strong> rotates the theme by weekday;
+          pick a day to pin its look.
         </div>
       </div>
 

@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { loadData } from './utils/storage';
 import type { Entry } from './utils/timeclock';
 import { parseTimeclockFile, exportTimeclock, fmtDuration,
   calcSessions, groupByDay
 } from './utils/timeclock';
+import { conceptFor, themeId } from './utils/themes';
 
 import { Nav } from './components/Nav';
 import { ClockTab } from './components/ClockTab';
@@ -21,7 +23,19 @@ export function App() {
   const [entries, setEntries] = useLocalStorage<Entry[]>('tc-entries', []);
   const [projects, setProjects] = useLocalStorage<string[]>('tc-projects', []);
   const [hiddenProjects, setHiddenProjects] = useLocalStorage<Set<string>>('tc-hidden-projects', new Set());
-  const [theme, setTheme] = useLocalStorage<string>('tc-theme', 'system');
+  // Migrate the legacy single `tc-theme` key (light/dark/system/daily) to the
+  // independent scheme + concept axes when the new keys are absent, so a
+  // returning user keeps their prior appearance: their light/dark/system
+  // scheme, plus their static base look ('lime') or the daily rotation
+  // ('auto'). Fresh installs (no legacy key) get the new 'auto'/'system'
+  // defaults. (useLocalStorage uses these only when the key isn't stored yet.)
+  const legacyTheme = loadData<string | null>('tc-theme', null);
+  const [concept, setConcept] = useLocalStorage<string>(
+    'tc-concept', legacyTheme && legacyTheme !== 'daily' ? 'lime' : 'auto'
+  );
+  const [scheme, setScheme] = useLocalStorage<string>(
+    'tc-scheme', legacyTheme === 'light' || legacyTheme === 'dark' ? legacyTheme : 'system'
+  );
 
   // Convert loaded hiddenProjects array back to Set if needed (since JSON.stringify converts Set to Object/Array)
   const actualHiddenProjects = hiddenProjects instanceof Set ? hiddenProjects : new Set(hiddenProjects as unknown as string[]);
@@ -30,7 +44,6 @@ export function App() {
   const [modal, setModal] = useState<ModalState | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
-  const [flash, setFlash] = useState<'in' | 'out' | null>(null);
   const [editSession, setEditSession] = useState<any>(null);
 
   useEffect(() => {
@@ -38,11 +51,28 @@ export function App() {
     return () => clearInterval(id);
   }, []);
 
+  // Track the OS light/dark preference so 'daily' mode can pick the matching
+  // scheme from each day's light/dark pair.
+  const [prefersDark, setPrefersDark] = useState(
+    () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true
+  );
   useEffect(() => {
-    const html = document.documentElement;
-    if (theme === 'system') html.removeAttribute('data-theme');
-    else html.setAttribute('data-theme', theme);
-  }, [theme]);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (e: MediaQueryListEvent) => setPrefersDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  // Scheme and concept are independent. Concept 'auto' follows the weekday
+  // (rolls over at midnight as `now` ticks past it); scheme 'system' follows
+  // the OS preference. They resolve together into a `${concept}-${scheme}`
+  // data-theme, e.g. "aurora-dark".
+  const resolvedConcept = concept === 'auto' ? conceptFor(now).id : concept;
+  const resolvedScheme = scheme === 'system' ? (prefersDark ? 'dark' : 'light') : scheme;
+  const activeTheme = themeId(resolvedConcept, resolvedScheme as 'light' | 'dark');
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', activeTheme);
+  }, [activeTheme]);
 
   const lastEntry = entries[entries.length - 1];
   const isClockedIn = lastEntry?.type === 'i';
@@ -60,14 +90,6 @@ export function App() {
   const todayDay = days.find(d => d.date === todayKey);
   const todayMs = todayDay ? todayDay.totalMs + (isClockedIn ? runningMs : 0) : (isClockedIn ? runningMs : 0);
 
-  function triggerFlash(type: 'in' | 'out') {
-    setFlash(null);
-    requestAnimationFrame(() => {
-      setFlash(type);
-      setTimeout(() => setFlash(null), 700);
-    });
-  }
-
   function clockIn(account: string) {
     if (isClockedIn) {
       const now2 = new Date().toISOString();
@@ -75,12 +97,10 @@ export function App() {
     } else {
       setEntries(p => [...p, { type: 'i', datetime: new Date().toISOString(), account }]);
     }
-    triggerFlash('in');
   }
 
   function clockOut() {
     setEntries(p => [...p, { type: 'o', datetime: new Date().toISOString() }]);
-    triggerFlash('out');
   }
 
   function showToast(msg: string) {
@@ -181,7 +201,6 @@ export function App() {
 
   return (
     <div className="app">
-      {flash && <div className={`flash-overlay ${flash}`} key={Date.now()} />}
 
       {editSession && <EditModal
         editSession={editSession}
@@ -262,8 +281,10 @@ export function App() {
 
         {tab === 'projects' && (
           <ProjectsTab
-            theme={theme}
-            setTheme={setTheme}
+            concept={concept}
+            setConcept={setConcept}
+            scheme={scheme}
+            setScheme={setScheme}
             allProjectNames={allProjectNames}
             hiddenProjects={actualHiddenProjects}
             toggleHidden={toggleHidden}

@@ -10,12 +10,18 @@
   <meta name="apple-mobile-web-app-title" content="TimeClock"/>
   <title>TimeClock</title>
   <script>
-    // Prevent FOUC by setting theme early
+    // Prevent FOUC: resolve concept (weekday-aware) + scheme (OS-aware) early.
+    // Keep the DOW list in sync with src/utils/themes.ts.
     try {
-      const theme = JSON.parse(localStorage.getItem('tc-theme')) || 'system';
-      const html = document.documentElement;
-      if (theme !== 'system') html.setAttribute('data-theme', theme);
-    } catch {}
+      var concept = JSON.parse(localStorage.getItem('tc-concept')) || 'auto';
+      var scheme = JSON.parse(localStorage.getItem('tc-scheme')) || 'system';
+      var DOW = ['clay', 'indigo', 'aurora', 'sunset', 'crt', 'brutal', 'lime'];
+      var c = concept === 'auto' ? DOW[new Date().getDay()] : concept;
+      var s = scheme === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : scheme;
+      document.documentElement.setAttribute('data-theme', c + '-' + s);
+    } catch (e) {}
   </script>
   <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
   <link rel="icon" href="/favicon.ico"/>
