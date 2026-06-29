@@ -366,14 +366,14 @@ html, body { background: var(--bg); }
 [data-theme^="sunset-"] .status-bar.active::before {
   content:''; position:absolute; inset:-15%; z-index:-1; pointer-events:none;
   background:
-    radial-gradient(90% 65% at 50% 112%, var(--sun-core), transparent 62%),
-    radial-gradient(65% 50% at 50% 122%, var(--sun-mid), transparent 60%);
+    radial-gradient(105% 82% at 50% 98%,  var(--sun-core), transparent 64%),
+    radial-gradient(80% 62% at 50% 110%, var(--sun-mid),  transparent 62%);
   animation: sunsetGlow 10s ease-in-out infinite alternate;
 }
 @keyframes sunsetGlow {
-  0%   { transform: translate(-5%, 4%) scale(1);     opacity:.55; }
-  50%  { transform: translate(3%, 0%)  scale(1.08);  opacity:.95; }
-  100% { transform: translate(6%, 3%)  scale(1.04);  opacity:.7; }
+  0%   { transform: translate(-6%, 5%) scale(1.02);  opacity:.55; }
+  50%  { transform: translate(4%, 0%)  scale(1.14);  opacity:1; }
+  100% { transform: translate(7%, 4%)  scale(1.06);  opacity:.72; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-theme^="sunset-"] .status-bar.active::before { animation: none; }
@@ -393,7 +393,7 @@ html, body { background: var(--bg); }
   --nav-bg:rgba(255,241,230,0.7); --lime:#c2410c; --lime-dim:#fb923c;
   --lime-bg:rgba(194,65,12,0.06); --lime-badge-bg:rgba(194,65,12,0.14);
   --lime-badge-border:rgba(251,146,60,0.6); --amber:#be123c; --shadow-col:rgba(192,64,30,0.18);
-  --sun-core:rgba(255,140,40,0.7); --sun-mid:rgba(244,80,110,0.55);
+  --sun-core:rgba(255,120,25,0.78); --sun-mid:rgba(238,64,98,0.62);
   --grad: linear-gradient(165deg,#ffd9a0 0%, #ffb38a 30%, #ff8f9c 70%, #f06595 100%);
 }
 
