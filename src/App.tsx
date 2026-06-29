@@ -22,7 +22,8 @@ export function App() {
   const [entries, setEntries] = useLocalStorage<Entry[]>('tc-entries', []);
   const [projects, setProjects] = useLocalStorage<string[]>('tc-projects', []);
   const [hiddenProjects, setHiddenProjects] = useLocalStorage<Set<string>>('tc-hidden-projects', new Set());
-  const [theme, setTheme] = useLocalStorage<string>('tc-theme', 'system');
+  const [concept, setConcept] = useLocalStorage<string>('tc-concept', 'auto');
+  const [scheme, setScheme] = useLocalStorage<string>('tc-scheme', 'system');
 
   // Convert loaded hiddenProjects array back to Set if needed (since JSON.stringify converts Set to Object/Array)
   const actualHiddenProjects = hiddenProjects instanceof Set ? hiddenProjects : new Set(hiddenProjects as unknown as string[]);
@@ -51,15 +52,16 @@ export function App() {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  // In 'daily' mode the concept follows the weekday (rolls over at midnight as
-  // `now` ticks past it) and the scheme follows the OS preference.
-  const dailyTheme = themeId(conceptFor(now).id, prefersDark ? 'dark' : 'light');
+  // Scheme and concept are independent. Concept 'auto' follows the weekday
+  // (rolls over at midnight as `now` ticks past it); scheme 'system' follows
+  // the OS preference. They resolve together into a `${concept}-${scheme}`
+  // data-theme, e.g. "aurora-dark".
+  const resolvedConcept = concept === 'auto' ? conceptFor(now).id : concept;
+  const resolvedScheme = scheme === 'system' ? (prefersDark ? 'dark' : 'light') : scheme;
+  const activeTheme = themeId(resolvedConcept, resolvedScheme as 'light' | 'dark');
   useEffect(() => {
-    const html = document.documentElement;
-    if (theme === 'system') html.removeAttribute('data-theme');
-    else if (theme === 'daily') html.setAttribute('data-theme', dailyTheme);
-    else html.setAttribute('data-theme', theme);
-  }, [theme, dailyTheme]);
+    document.documentElement.setAttribute('data-theme', activeTheme);
+  }, [activeTheme]);
 
   const lastEntry = entries[entries.length - 1];
   const isClockedIn = lastEntry?.type === 'i';
@@ -279,8 +281,10 @@ export function App() {
 
         {tab === 'projects' && (
           <ProjectsTab
-            theme={theme}
-            setTheme={setTheme}
+            concept={concept}
+            setConcept={setConcept}
+            scheme={scheme}
+            setScheme={setScheme}
             allProjectNames={allProjectNames}
             hiddenProjects={actualHiddenProjects}
             toggleHidden={toggleHidden}

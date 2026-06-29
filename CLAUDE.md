@@ -56,7 +56,8 @@ tests/
 | `tc-entries` | `Entry[]` | Raw clock-in/out events in chronological order |
 | `tc-projects` | `string[]` | Explicit project list (user-managed) |
 | `tc-hidden-projects` | `string[]` (stored as array, used as `Set`) | Projects hidden from the Clock tab |
-| `tc-theme` | `'light' \| 'dark' \| 'system'` | Theme preference |
+| `tc-concept` | `'auto' \| 'clay' \| 'indigo' \| 'aurora' \| 'sunset' \| 'crt' \| 'brutal' \| 'lime'` | Theme concept (button/card treatment); `'auto'` rotates by weekday |
+| `tc-scheme` | `'light' \| 'dark' \| 'system'` | Color scheme |
 
 `useLocalStorage` stores `Set` values as arrays (JSON can't serialize `Set`). `App.tsx` converts `tc-hidden-projects` back to a `Set` after loading.
 
@@ -103,7 +104,9 @@ Import merges with existing data; duplicates (same `datetime + type`) are skippe
 
 ## Theming
 
-CSS custom properties are defined in `src/index.css` for `:root` (dark, default), `@media (prefers-color-scheme: light)`, `[data-theme="light"]`, and `[data-theme="dark"]`. The `data-theme` attribute is set on `document.documentElement` by `App.tsx` when theme is not `'system'`.
+Appearance has two independent axes: **scheme** (`tc-scheme`: light/dark/system) and **concept** (`tc-concept`: a button/card *treatment*; `auto` rotates by weekday via `src/utils/themes.ts`). `App.tsx` resolves them — concept `auto` → today's weekday concept, scheme `system` → OS preference — into a single `data-theme="${concept}-${scheme}"` (e.g. `aurora-dark`) on `document.documentElement`. An early inline script in `index.html` mirrors this resolution to avoid FOUC.
+
+Each concept defines a shared treatment (`[data-theme^="<id>-"]`) plus paired light/dark palettes (`[data-theme="<id>-light|dark"]`) in `src/index.css`; 7 concepts × 2 schemes = 14 themes. The base `:root`/`@media (prefers-color-scheme)`/`[data-theme="light|dark"]` rules remain as fallback but are superseded once a paired theme is applied.
 
 Fonts: `Azeret Mono` (monospace, `var(--mono)`) and `Outfit` (UI, `var(--ui)`), loaded from Google Fonts via `index.html`.
 
