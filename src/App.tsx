@@ -32,7 +32,6 @@ export function App() {
   const [modal, setModal] = useState<ModalState | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
-  const [flash, setFlash] = useState<'in' | 'out' | null>(null);
   const [editSession, setEditSession] = useState<any>(null);
 
   useEffect(() => {
@@ -79,14 +78,6 @@ export function App() {
   const todayDay = days.find(d => d.date === todayKey);
   const todayMs = todayDay ? todayDay.totalMs + (isClockedIn ? runningMs : 0) : (isClockedIn ? runningMs : 0);
 
-  function triggerFlash(type: 'in' | 'out') {
-    setFlash(null);
-    requestAnimationFrame(() => {
-      setFlash(type);
-      setTimeout(() => setFlash(null), 700);
-    });
-  }
-
   function clockIn(account: string) {
     if (isClockedIn) {
       const now2 = new Date().toISOString();
@@ -94,12 +85,10 @@ export function App() {
     } else {
       setEntries(p => [...p, { type: 'i', datetime: new Date().toISOString(), account }]);
     }
-    triggerFlash('in');
   }
 
   function clockOut() {
     setEntries(p => [...p, { type: 'o', datetime: new Date().toISOString() }]);
-    triggerFlash('out');
   }
 
   function showToast(msg: string) {
@@ -200,7 +189,6 @@ export function App() {
 
   return (
     <div className="app">
-      {flash && <div className={`flash-overlay ${flash}`} key={Date.now()} />}
 
       {editSession && <EditModal
         editSession={editSession}
