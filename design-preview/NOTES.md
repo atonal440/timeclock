@@ -12,6 +12,10 @@
   get to those themes. (Indigo uses a glow pulse instead — see below.)
 
 ## Done
+- **Aurora Glass** — active card has a slow **aurora shimmer**: a drifting
+  teal/violet (dark) or teal/sky (light) gradient on `.status-bar.active::before`
+  (clipped via `overflow:hidden`), `auroraShimmer` 11s alternate. Colors via
+  `--shimmer-a/--shimmer-b`; disabled under `prefers-reduced-motion`.
 - **Soft Clay · dark** — active session card was disappearing (no border,
   invisible highlight, surface≈bg). Added an **inset accent ring**
   (`inset 0 0 0 1.5px var(--inset-edge)`, `--inset-edge:var(--lime-dim)`) to

@@ -296,6 +296,23 @@ html, body { background: var(--bg); }
 }
 [data-theme^="aurora-"] .nav { backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
 [data-theme^="aurora-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 24px var(--accent-glow); }
+/* Active "live" cue: a slow aurora wash drifts inside the frosted card. */
+[data-theme^="aurora-"] .status-bar.active { position: relative; overflow: hidden; }
+[data-theme^="aurora-"] .status-bar.active::before {
+  content:''; position:absolute; inset:-50%; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(38% 48% at 30% 32%, var(--shimmer-a), transparent 70%),
+    radial-gradient(42% 52% at 72% 64%, var(--shimmer-b), transparent 70%);
+  animation: auroraShimmer 11s ease-in-out infinite alternate;
+}
+@keyframes auroraShimmer {
+  0%   { transform: translate(-7%, -5%) rotate(0deg);  opacity:.65; }
+  50%  { opacity: 1; }
+  100% { transform: translate(7%, 6%)  rotate(10deg);  opacity:.7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="aurora-"] .status-bar.active::before { animation: none; }
+}
 [data-theme="aurora-dark"] {
   --bg:#0b1020; --surface:rgba(255,255,255,0.07); --surface2:rgba(255,255,255,0.1);
   --border:rgba(255,255,255,0.16); --text:#eef2ff; --muted:#9fb0d6; --times-color:#7e8bb5;
@@ -303,6 +320,7 @@ html, body { background: var(--bg); }
   --lime-bg:rgba(94,234,212,0.1); --lime-badge-bg:rgba(94,234,212,0.18);
   --lime-badge-border:rgba(94,234,212,0.4); --amber:#fcd34d;
   --shadow-col:rgba(0,0,0,0.25); --glass-rim:rgba(255,255,255,0.18); --accent-glow:rgba(94,234,212,0.5);
+  --shimmer-a:rgba(45,212,191,0.30); --shimmer-b:rgba(167,139,250,0.28);
   --grad:
     radial-gradient(40% 35% at 20% 15%, rgba(56,189,248,0.35), transparent 60%),
     radial-gradient(45% 40% at 85% 10%, rgba(167,139,250,0.4), transparent 60%),
@@ -316,6 +334,7 @@ html, body { background: var(--bg); }
   --lime-bg:rgba(14,116,144,0.1); --lime-badge-bg:rgba(14,116,144,0.12);
   --lime-badge-border:rgba(14,116,144,0.3); --amber:#b45309;
   --shadow-col:rgba(80,100,160,0.18); --glass-rim:rgba(255,255,255,0.7); --accent-glow:rgba(45,212,191,0.4);
+  --shimmer-a:rgba(45,212,191,0.40); --shimmer-b:rgba(125,211,252,0.42);
   --grad:
     radial-gradient(40% 35% at 20% 15%, rgba(125,211,252,0.6), transparent 60%),
     radial-gradient(45% 40% at 85% 10%, rgba(196,181,253,0.6), transparent 60%),
