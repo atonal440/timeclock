@@ -205,6 +205,17 @@ html, body { background: var(--bg); }
 
 /* ─────────────────────────  LIME · flat terminal  ───────────────────────── */
 [data-theme^="lime-"] .time-display.clocked-in { color: var(--lime); text-shadow: 0 0 30px var(--accent-glow); }
+/* Active "live" cue: a blinking terminal block cursor after the running
+   session's account, like a live prompt line. */
+[data-theme^="lime-"] .status-bar.active .status-account::after {
+  content:''; display:inline-block; width:0.55em; height:1.05em; margin-left:6px;
+  vertical-align:-0.12em; background:var(--lime); box-shadow:0 0 6px var(--accent-glow);
+  animation: limeBlink 1.1s infinite;
+}
+@keyframes limeBlink { 0%,50% { opacity:1; } 51%,100% { opacity:0; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="lime-"] .status-bar.active .status-account::after { animation:none; opacity:1; }
+}
 [data-theme="lime-dark"] {
   --bg:#080b12; --surface:#10141e; --surface2:#161b28; --border:#1e2535;
   --text:#e8edf5; --muted:#5a6480; --times-color:#3a4460; --nav-bg:rgba(8,11,18,0.95);

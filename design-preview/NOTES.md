@@ -18,6 +18,10 @@
   likely as a *subtler* cue than the session card.
 
 ## Done
+- **Lime Terminal** — active card shows a blinking **terminal block cursor**
+  after the running session's account (`.status-account::after`, `limeBlink`
+  1.1s square blink), like a live prompt. Glows on dark (`--accent-glow`), flat
+  on light. Restrained, to keep the original's calm. Reduced-motion → steady.
 - **CRT Terminal** — active card combines two cues: a constant **scanline roll**
   (`::after`, `crtRoll` 1.1s, color `--scanline`) and a periodic **phosphor
   sweep** (`::before`, `crtSweep` 3.6s, color `--sweep`). Green on dark, amber on
