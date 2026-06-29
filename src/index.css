@@ -129,7 +129,7 @@ html, body { background: var(--bg); }
 .edit-row { margin-bottom: 14px; }
 .edit-times { display: flex; gap: 8px; }
 .edit-times .edit-row { flex: 1; margin-bottom: 0; }
-.modal-save { flex: 1; padding: 12px; border-radius: 8px; background: var(--lime-badge-bg); border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; }
+.modal-save { flex: 1; padding: 12px; border-radius: 8px; background: var(--lime-badge-bg); border: 1px solid var(--lime-dim); color: var(--on-badge, var(--lime)); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; }
 .modal-save:hover { opacity: 0.85; }
 .danger-btn { width: 100%; padding: 13px; border-radius: 8px; background: transparent; border: 1px solid rgba(239,68,68,0.25); color: rgba(239,68,68,0.7); font-family: var(--ui); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .danger-btn:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.5); color: #ef4444; }
@@ -156,7 +156,7 @@ html, body { background: var(--bg); }
 .project-path-mid { color: var(--text); opacity: 0.55; }
 .project-path-leaf { color: var(--text); font-weight: 600; }
 .vis-btn { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-family: var(--ui); font-weight: 500; cursor: pointer; border: 1px solid; transition: all 0.15s; flex-shrink: 0; }
-.vis-visible { background: var(--lime-badge-bg); border-color: var(--lime-badge-border); color: var(--lime); }
+.vis-visible { background: var(--lime-badge-bg); border-color: var(--lime-badge-border); color: var(--on-badge, var(--lime)); }
 .vis-hidden { background: transparent; border-color: var(--border); color: var(--muted); }
 .vis-btn:hover { opacity: 0.75; }
 .hidden-disclosure { width: 100%; padding: 8px 0; background: none; border: none; border-bottom: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 12px; font-weight: 500; cursor: pointer; text-align: left; letter-spacing: 0.3px; }
@@ -169,12 +169,12 @@ html, body { background: var(--bg); }
 .action-btn:hover { background: var(--surface2); }
 .import-area { width: 100%; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 11px; outline: none; resize: vertical; min-height: 120px; margin-bottom: 8px; }
 .import-area::placeholder { color: var(--muted); }
-.confirm-btn { width: 100%; padding: 12px; border-radius: 8px; background: var(--lime-badge-bg); border: 1px solid var(--lime-dim); color: var(--lime); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 6px; }
+.confirm-btn { width: 100%; padding: 12px; border-radius: 8px; background: var(--lime-badge-bg); border: 1px solid var(--lime-dim); color: var(--on-badge, var(--lime)); font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 6px; }
 .confirm-btn:hover { background: var(--lime-badge-border); }
 .cancel-btn { width: 100%; padding: 12px; border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 14px; cursor: pointer; }
 .theme-toggle { display: flex; gap: 6px; }
 .theme-opt { flex: 1; padding: 9px 4px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: center; }
-.theme-opt.active { background: var(--lime-badge-bg); border-color: var(--lime-dim); color: var(--lime); }
+.theme-opt.active { background: var(--lime-badge-bg); border-color: var(--lime-dim); color: var(--on-badge, var(--lime)); }
 .hint { font-size: 11px; color: var(--muted); line-height: 1.5; padding: 8px 0; }
 .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .stat-row:last-child { margin-bottom: 0; }
@@ -521,14 +521,14 @@ html, body { background: var(--bg); }
   --text:#f5f5f5; --muted:#9a9aa5; --times-color:#6a6a76; --nav-bg:#0c0c0f;
   --lime:#7CFC00; --lime-dim:#f5f5f5; --lime-bg:rgba(124,252,0,0.08);
   --lime-badge-bg:#7CFC00; --lime-badge-border:#f5f5f5; --amber:#ff3b6b;
-  --hard-ink:#f5f5f5; --brutal-active:#243b14; --ink-on-accent:#0c0c0f;
+  --hard-ink:#f5f5f5; --brutal-active:#243b14; --ink-on-accent:#0c0c0f; --on-badge:var(--ink-on-accent);
 }
 [data-theme="brutal-light"] {
   --bg:#ffe14d; --surface:#ffffff; --surface2:#ffffff; --border:#111111;
   --text:#111111; --muted:#555555; --times-color:#777777; --nav-bg:#ffffff;
   --lime:#1f6feb; --lime-dim:#111111; --lime-bg:rgba(31,111,235,0.06);
   --lime-badge-bg:#1f6feb; --lime-badge-border:#111111; --amber:#e11d48;
-  --hard-ink:#111111; --brutal-active:#c6f68d; --ink-on-accent:#ffffff;
+  --hard-ink:#111111; --brutal-active:#c6f68d; --ink-on-accent:#ffffff; --on-badge:var(--ink-on-accent);
 }
 
 /* ─────────────────────────  CLAY · neumorphic  ──────────────────────────── */
@@ -565,7 +565,7 @@ html, body { background: var(--bg); }
   --lime:#a78bfa; --lime-dim:#7c6bd6; --lime-bg:rgba(167,139,250,0.08);
   --lime-badge-bg:#a78bfa; --lime-badge-border:transparent; --amber:#f0789f;
   --neu-d:rgba(0,0,0,0.5); --neu-l:rgba(255,255,255,0.07); --ink-on-accent:#1a1320; --accent-glow:rgba(167,139,250,0.45);
-  --inset-edge:var(--lime-dim);
+  --on-badge:var(--ink-on-accent); --inset-edge:var(--lime-dim);
 }
 [data-theme="clay-light"] {
   --bg:#e8e6ff; --surface:#efeefe; --surface2:#f1ecff; --border:transparent;
@@ -573,7 +573,7 @@ html, body { background: var(--bg); }
   --lime:#7c5cff; --lime-dim:#b9aaff; --lime-bg:rgba(124,92,255,0.06);
   --lime-badge-bg:#7c5cff; --lime-badge-border:transparent; --amber:#ef6aa8;
   --neu-d:rgba(160,150,210,0.55); --neu-l:rgba(255,255,255,0.9); --ink-on-accent:#ffffff; --accent-glow:rgba(124,92,255,0.5);
-  --inset-edge:rgba(124,92,255,0.55);
+  --on-badge:var(--ink-on-accent); --inset-edge:rgba(124,92,255,0.55);
 }
 
 /* ── Theme (concept) picker grid (Projects → Appearance) ── */
