@@ -360,12 +360,31 @@ html, body { background: var(--bg); }
 }
 [data-theme^="sunset-"] .nav { backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
 [data-theme^="sunset-"] .time-display.clocked-in { color:var(--lime); text-shadow:none; }
+/* Active "live" cue: a golden-hour sun-glow pools low in the card and slowly
+   swells + drifts sideways, like late sun settling at the horizon. */
+[data-theme^="sunset-"] .status-bar.active { position: relative; overflow: hidden; }
+[data-theme^="sunset-"] .status-bar.active::before {
+  content:''; position:absolute; inset:-15%; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(90% 65% at 50% 112%, var(--sun-core), transparent 62%),
+    radial-gradient(65% 50% at 50% 122%, var(--sun-mid), transparent 60%);
+  animation: sunsetGlow 10s ease-in-out infinite alternate;
+}
+@keyframes sunsetGlow {
+  0%   { transform: translate(-5%, 4%) scale(1);     opacity:.55; }
+  50%  { transform: translate(3%, 0%)  scale(1.08);  opacity:.95; }
+  100% { transform: translate(6%, 3%)  scale(1.04);  opacity:.7; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="sunset-"] .status-bar.active::before { animation: none; }
+}
 [data-theme="sunset-dark"] {
   --bg:#1a0f14; --surface:rgba(60,30,40,0.55); --surface2:rgba(70,36,48,0.7);
   --border:rgba(255,180,160,0.18); --text:#ffe6dd; --muted:#c79a93; --times-color:#7e5a55;
   --nav-bg:rgba(26,15,20,0.6); --lime:#fb923c; --lime-dim:rgba(251,146,60,0.5);
   --lime-bg:rgba(251,146,60,0.1); --lime-badge-bg:rgba(251,146,60,0.16);
   --lime-badge-border:rgba(251,146,60,0.4); --amber:#f43f5e; --shadow-col:rgba(0,0,0,0.35);
+  --sun-core:rgba(251,146,60,0.5); --sun-mid:rgba(244,63,94,0.4);
   --grad: linear-gradient(165deg,#3a1c2a 0%, #5b2433 35%, #7c2d3a 70%, #b14256 100%);
 }
 [data-theme="sunset-light"] {
@@ -374,6 +393,7 @@ html, body { background: var(--bg); }
   --nav-bg:rgba(255,241,230,0.7); --lime:#c2410c; --lime-dim:#fb923c;
   --lime-bg:rgba(194,65,12,0.06); --lime-badge-bg:rgba(194,65,12,0.14);
   --lime-badge-border:rgba(251,146,60,0.6); --amber:#be123c; --shadow-col:rgba(192,64,30,0.18);
+  --sun-core:rgba(255,140,40,0.7); --sun-mid:rgba(244,80,110,0.55);
   --grad: linear-gradient(165deg,#ffd9a0 0%, #ffb38a 30%, #ff8f9c 70%, #f06595 100%);
 }
 

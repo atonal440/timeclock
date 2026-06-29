@@ -10,7 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, 'shots-pairs');
 const CHROME = join(process.env.HOME, '.cache/ms-playwright/chromium-1223/chrome-linux/chrome');
 const URL = 'http://localhost:5173/';
-const PERIOD = 11;  // matches auroraShimmer duration (one direction)
+const CONCEPT = process.argv[2] || 'aurora';        // concept whose ::before drift to capture
+const PERIOD = parseFloat(process.argv[3]) || 11;   // matches the keyframes duration (one direction)
 const N = 22;       // frames over the forward half; ping-ponged for a smooth loop
 
 const SEED = () => {
@@ -23,7 +24,6 @@ const SEED = () => {
   localStorage.setItem('tc-entries', JSON.stringify(e));
   localStorage.setItem('tc-projects', JSON.stringify(projects));
   localStorage.setItem('tc-hidden-projects','[]');
-  localStorage.setItem('tc-concept', JSON.stringify('aurora'));
   localStorage.setItem('tc-scheme', JSON.stringify('dark'));
 };
 const CLIP = { x:0, y:84, width:390, height:200 };
@@ -35,7 +35,7 @@ const page = await ctx.newPage();
 await page.goto(URL,{waitUntil:'networkidle'});
 await page.evaluate(SEED);
 
-for (const theme of ['aurora-dark','aurora-light']) {
+for (const theme of [`${CONCEPT}-dark`, `${CONCEPT}-light`]) {
   await page.goto(URL,{waitUntil:'networkidle'});
   await page.evaluate((t)=>document.documentElement.setAttribute('data-theme',t), theme);
   await page.locator('.nav-btn').nth(0).click();
@@ -44,10 +44,10 @@ for (const theme of ['aurora-dark','aurora-light']) {
   const frames=[];
   for (let i=0;i<N;i++){
     const t=(i/(N-1))*PERIOD;
-    await page.evaluate((delay)=>{
+    await page.evaluate(({delay, c})=>{
       let el=document.getElementById('__freeze'); if(!el){el=document.createElement('style');el.id='__freeze';document.head.appendChild(el);}
-      el.textContent = `[data-theme^="aurora-"] .status-bar.active::before{animation-delay:-${delay}s !important;animation-play-state:paused !important;}`;
-    }, t);
+      el.textContent = `[data-theme^="${c}-"] .status-bar.active::before{animation-delay:-${delay}s !important;animation-play-state:paused !important;}`;
+    }, {delay: t, c: CONCEPT});
     await sleep(35);
     frames.push(PNG.sync.read(await page.screenshot({clip:CLIP})));
   }

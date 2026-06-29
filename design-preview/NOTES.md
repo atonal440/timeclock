@@ -12,6 +12,10 @@
   get to those themes. (Indigo uses a glow pulse instead — see below.)
 
 ## Done
+- **Sunset Warmth** — active card has a **golden-hour glow**: a warm sun-glow
+  (`--sun-core`/`--sun-mid`) pooled low in the card on `.status-bar.active::before`,
+  swelling + drifting sideways via `sunsetGlow` 10s alternate. Conceptual sibling
+  to aurora (sun at the horizon vs. lights in the sky). Reduced-motion safe.
 - **Aurora Glass** — active card has a slow **aurora shimmer**: a drifting
   teal/violet (dark) or teal/sky (light) gradient on `.status-bar.active::before`
   (clipped via `overflow:hidden`), `auroraShimmer` 11s alternate. Colors via
