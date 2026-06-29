@@ -19,6 +19,17 @@ test('visual regression verification', async ({ page }) => {
     MockDate.UTC = OriginalDate.UTC;
 
     (window as any).Date = MockDate;
+
+    // Pin a deterministic appearance so the snapshot is stable regardless of
+    // the weekday ('auto' rotates the concept) or the runner's color-scheme.
+    // 'lime' + 'light' reproduces the original base light theme this baseline
+    // was captured against.
+    try {
+      localStorage.setItem('tc-concept', JSON.stringify('lime'));
+      localStorage.setItem('tc-scheme', JSON.stringify('light'));
+    } catch {
+      /* localStorage unavailable — fall through */
+    }
   });
 
   await page.goto('/');

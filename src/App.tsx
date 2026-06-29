@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { loadData } from './utils/storage';
 import type { Entry } from './utils/timeclock';
 import { parseTimeclockFile, exportTimeclock, fmtDuration,
   calcSessions, groupByDay
@@ -22,8 +23,19 @@ export function App() {
   const [entries, setEntries] = useLocalStorage<Entry[]>('tc-entries', []);
   const [projects, setProjects] = useLocalStorage<string[]>('tc-projects', []);
   const [hiddenProjects, setHiddenProjects] = useLocalStorage<Set<string>>('tc-hidden-projects', new Set());
-  const [concept, setConcept] = useLocalStorage<string>('tc-concept', 'auto');
-  const [scheme, setScheme] = useLocalStorage<string>('tc-scheme', 'system');
+  // Migrate the legacy single `tc-theme` key (light/dark/system/daily) to the
+  // independent scheme + concept axes when the new keys are absent, so a
+  // returning user keeps their prior appearance: their light/dark/system
+  // scheme, plus their static base look ('lime') or the daily rotation
+  // ('auto'). Fresh installs (no legacy key) get the new 'auto'/'system'
+  // defaults. (useLocalStorage uses these only when the key isn't stored yet.)
+  const legacyTheme = loadData<string | null>('tc-theme', null);
+  const [concept, setConcept] = useLocalStorage<string>(
+    'tc-concept', legacyTheme && legacyTheme !== 'daily' ? 'lime' : 'auto'
+  );
+  const [scheme, setScheme] = useLocalStorage<string>(
+    'tc-scheme', legacyTheme === 'light' || legacyTheme === 'dark' ? legacyTheme : 'system'
+  );
 
   // Convert loaded hiddenProjects array back to Set if needed (since JSON.stringify converts Set to Object/Array)
   const actualHiddenProjects = hiddenProjects instanceof Set ? hiddenProjects : new Set(hiddenProjects as unknown as string[]);
