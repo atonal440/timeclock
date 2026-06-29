@@ -10,6 +10,12 @@
 - **Animated green gradient on active buttons** (other themes): animate a
   flowing green gradient across the active/clocked-in buttons. Revisit when we
   get to those themes. (Indigo uses a glow pulse instead — see below.)
+- **Drift on the active task row** (`.project-btn.current`), someday: extend the
+  session-card drift down into the NOW row as a "this one's live" list cue.
+  Working prototype in `capture-taskdrift.mjs` (aurora, scoped via
+  `overflow:hidden` + `inset:-80%`, reusing `auroraShimmer`/`--shimmer`). Would
+  put motion on two surfaces — only do it if we relax the one-indicator rule,
+  likely as a *subtler* cue than the session card.
 
 ## Done
 - **Sunset Warmth** — active card has a **golden-hour glow**: a warm sun-glow
