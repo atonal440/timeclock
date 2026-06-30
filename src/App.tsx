@@ -178,6 +178,7 @@ export function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'timeclock.journal'; a.click();
     URL.revokeObjectURL(url);
+    showToast('Downloaded timeclock.journal');
   }
 
   function toggleHidden(p: string) {
