@@ -225,42 +225,42 @@ export function App() {
 
       {toast && <div className="toast">{toast}</div>}
 
-      <div className="header">
-        <div className={`time-display ${isClockedIn ? 'clocked-in' : ''}`}>{timeStr}</div>
-        <div className="date-line">{dateStr}</div>
-      </div>
-
-      <div className={`status-bar ${isClockedIn ? 'active' : ''}`}>
-        {isClockedIn ? (
-          <>
-            <div className="status-top-row">
-              <div className="status-label">Clocked in</div>
-              <div className="running-time">{fmtDuration(runningMs)}</div>
-            </div>
-            <div className="status-account">{currentAccount}</div>
-            <button className="clock-out-btn" onClick={clockOut}>Clock Out</button>
-          </>
-        ) : (
-          <>
-            <div className="status-left">
-              <div className="status-label">Status</div>
-              <div className="status-idle">— idle —</div>
-            </div>
-            {todayMs > 0 ? (
-              <div style={{ textAlign: 'right' }}>
-                <div className="status-label">Today</div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: '18px', color: 'var(--amber)', fontWeight: '600' }}>
-                  {fmtDuration(todayMs)}
-                </div>
-              </div>
-            ) : (
-              <div style={{ fontFamily: 'var(--mono)', fontSize: '12px', color: 'var(--muted)' }}>No entries today</div>
-            )}
-          </>
-        )}
-      </div>
-
       <div className="content">
+        <div className="header">
+          <div className={`time-display ${isClockedIn ? 'clocked-in' : ''}`}>{timeStr}</div>
+          <div className="date-line">{dateStr}</div>
+        </div>
+
+        <div className={`status-bar ${isClockedIn ? 'active' : ''}`}>
+          {isClockedIn ? (
+            <>
+              <div className="status-top-row">
+                <div className="status-label">Clocked in</div>
+                <div className="running-time">{fmtDuration(runningMs)}</div>
+              </div>
+              <div className="status-account">{currentAccount}</div>
+              <button className="clock-out-btn" onClick={clockOut}>Clock Out</button>
+            </>
+          ) : (
+            <>
+              <div className="status-left">
+                <div className="status-label">Status</div>
+                <div className="status-idle">— idle —</div>
+              </div>
+              {todayMs > 0 ? (
+                <div style={{ textAlign: 'right' }}>
+                  <div className="status-label">Today</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: '18px', color: 'var(--amber)', fontWeight: '600' }}>
+                    {fmtDuration(todayMs)}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontFamily: 'var(--mono)', fontSize: '12px', color: 'var(--muted)' }}>No entries today</div>
+              )}
+            </>
+          )}
+        </div>
+
         {tab === 'clock' && (
           <ClockTab
             isClockedIn={isClockedIn}

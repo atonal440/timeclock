@@ -80,14 +80,16 @@ html, body { height: 100%; overflow: hidden; }
 html, body { background: var(--bg); }
 
 .app { font-family: var(--ui); background: var(--bg); height: 100vh; height: -webkit-fill-available; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; color: var(--text); position: relative; overflow: hidden; }
-.header { padding: 20px 20px 0; padding-top: max(20px, env(safe-area-inset-top)); }
+.header { padding-top: max(20px, env(safe-area-inset-top)); }
 .time-display { font-family: var(--mono); font-size: 52px; font-weight: 700; letter-spacing: -2px; line-height: 1; color: var(--text); transition: color 0.3s; }
 .time-display.clocked-in { color: var(--lime); }
 @media (prefers-color-scheme: dark) { .time-display.clocked-in { text-shadow: 0 0 30px rgba(163,230,53,0.3); } }
 .date-line { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
 
-/* Status bar — idle: single row; active: stacked layout */
-.status-bar { margin: 16px 20px 0; padding: 12px 16px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: border-color 0.3s, background 0.3s; }
+/* Status bar — idle: single row; active: stacked layout.
+   Sticky + blurred so it reads as a floating layer over the scrolling
+   content below it, same idea as the bottom nav. */
+.status-bar { position: sticky; top: 0; z-index: 5; margin: 16px 0; padding: 12px 16px; border-radius: 10px; background: var(--surface); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border); box-shadow: 0 4px 16px var(--shadow-col, rgba(0,0,0,0.12)); display: flex; justify-content: space-between; align-items: center; transition: border-color 0.3s, background 0.3s; }
 .status-bar.active { border-color: var(--lime-dim); background: var(--lime-bg); flex-direction: column; align-items: stretch; gap: 10px; padding-bottom: 14px; }
 .status-top-row { display: flex; justify-content: space-between; align-items: baseline; }
 .status-left { display: flex; flex-direction: column; gap: 2px; }
@@ -97,7 +99,7 @@ html, body { background: var(--bg); }
 .running-time { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--lime); white-space: nowrap; }
 .clock-out-btn { width: 100%; padding: 10px; border-radius: 7px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; font-family: var(--ui); font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; text-align: center; }
 .clock-out-btn:hover { background: rgba(239,68,68,0.22); }
-.content { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px 100px; }
+.content { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 100px; }
 .section-label { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 10px; padding-left: 2px; }
 .project-grid { display: flex; flex-direction: column; gap: 8px; }
 .project-btn { width: 100%; padding: 16px 20px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); cursor: pointer; text-align: left; transition: all 0.15s; display: flex; justify-content: space-between; align-items: center; }
@@ -201,7 +203,7 @@ html, body { background: var(--bg); }
    ══════════════════════════════════════════════════════════════════════════ */
 
 /* Cards shared selector reference (per concept below):
-   .status-bar .project-btn .day-card .action-btn .theme-opt .edit-field .add-input */
+   .status-bar .project-btn .day-card .action-btn .theme-opt .edit-field .add-input .modal */
 
 /* ─────────────────────────  LIME · flat terminal  ───────────────────────── */
 [data-theme^="lime-"] .time-display.clocked-in { color: var(--lime); text-shadow: 0 0 30px var(--accent-glow); }
@@ -239,6 +241,7 @@ html, body { background: var(--bg); }
 [data-theme^="indigo-"] .theme-opt,
 [data-theme^="indigo-"] .edit-field,
 [data-theme^="indigo-"] .add-input,
+[data-theme^="indigo-"] .modal,
 [data-theme^="indigo-"] .concept-opt { border-radius:14px; box-shadow:0 6px 18px var(--shadow-col); }
 [data-theme^="indigo-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 26px var(--accent-glow); }
 /* Active-job highlight: brighter fill + glowing edge ring on the running
@@ -303,6 +306,7 @@ html, body { background: var(--bg); }
 [data-theme^="aurora-"] .theme-opt,
 [data-theme^="aurora-"] .edit-field,
 [data-theme^="aurora-"] .add-input,
+[data-theme^="aurora-"] .modal,
 [data-theme^="aurora-"] .concept-opt {
   -webkit-backdrop-filter:blur(16px) saturate(1.4); backdrop-filter:blur(16px) saturate(1.4);
   border-radius:18px; box-shadow:0 8px 30px var(--shadow-col), inset 0 1px 0 var(--glass-rim);
@@ -310,7 +314,7 @@ html, body { background: var(--bg); }
 [data-theme^="aurora-"] .nav { -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px); }
 [data-theme^="aurora-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 24px var(--accent-glow); }
 /* Active "live" cue: a slow aurora wash drifts inside the frosted card. */
-[data-theme^="aurora-"] .status-bar.active { position: relative; overflow: hidden; }
+[data-theme^="aurora-"] .status-bar.active { overflow: hidden; }
 [data-theme^="aurora-"] .status-bar.active::before {
   content:''; position:absolute; inset:-50%; z-index:-1; pointer-events:none;
   background:
@@ -368,6 +372,7 @@ html, body { background: var(--bg); }
 [data-theme^="sunset-"] .theme-opt,
 [data-theme^="sunset-"] .edit-field,
 [data-theme^="sunset-"] .add-input,
+[data-theme^="sunset-"] .modal,
 [data-theme^="sunset-"] .concept-opt {
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
   border-radius:20px; box-shadow:0 10px 24px var(--shadow-col);
@@ -376,7 +381,7 @@ html, body { background: var(--bg); }
 [data-theme^="sunset-"] .time-display.clocked-in { color:var(--lime); text-shadow:none; }
 /* Active "live" cue: a golden-hour sun-glow pools low in the card and slowly
    swells + drifts sideways, like late sun settling at the horizon. */
-[data-theme^="sunset-"] .status-bar.active { position: relative; overflow: hidden; }
+[data-theme^="sunset-"] .status-bar.active { overflow: hidden; }
 [data-theme^="sunset-"] .status-bar.active::before {
   content:''; position:absolute; inset:-15%; z-index:-1; pointer-events:none;
   background:
@@ -439,12 +444,13 @@ html, body { background: var(--bg); }
 [data-theme^="crt-"] .theme-opt,
 [data-theme^="crt-"] .edit-field,
 [data-theme^="crt-"] .add-input,
+[data-theme^="crt-"] .modal,
 [data-theme^="crt-"] .concept-opt,
 [data-theme^="crt-"] .project-badge { border-radius:2px; }
 [data-theme^="crt-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 14px var(--lime); }
 /* Active "live" cue: the running-session card both refreshes (scanlines roll,
    ::after) and gets a periodic phosphor scan sweep (::before). */
-[data-theme^="crt-"] .status-bar.active { position: relative; overflow: hidden; }
+[data-theme^="crt-"] .status-bar.active { overflow: hidden; }
 [data-theme^="crt-"] .status-bar.active::after {
   content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
   background: repeating-linear-gradient(0deg, transparent 0 2px, var(--scanline) 2px 4px);
@@ -488,6 +494,7 @@ html, body { background: var(--bg); }
 [data-theme^="brutal-"] .theme-opt,
 [data-theme^="brutal-"] .edit-field,
 [data-theme^="brutal-"] .add-input,
+[data-theme^="brutal-"] .modal,
 [data-theme^="brutal-"] .concept-opt { border:3px solid var(--hard-ink); border-radius:0; box-shadow:5px 5px 0 var(--hard-ink); }
 [data-theme^="brutal-"] .status-bar.active { background: var(--brutal-active); }
 [data-theme^="brutal-"] .project-btn:active { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--hard-ink); }
@@ -539,6 +546,7 @@ html, body { background: var(--bg); }
 [data-theme^="clay-"] .theme-opt,
 [data-theme^="clay-"] .edit-field,
 [data-theme^="clay-"] .add-input,
+[data-theme^="clay-"] .modal,
 [data-theme^="clay-"] .concept-opt,
 [data-theme^="clay-"] .nav { border:none; border-radius:24px; box-shadow:8px 8px 18px var(--neu-d), -8px -8px 18px var(--neu-l); }
 [data-theme^="clay-"] .status-bar.active {
