@@ -161,6 +161,12 @@ html, body { background: var(--bg); }
 .vis-visible { background: var(--lime-badge-bg); border-color: var(--lime-badge-border); color: var(--on-badge, var(--lime)); }
 .vis-hidden { background: transparent; border-color: var(--border); color: var(--muted); }
 .vis-btn:hover { opacity: 0.75; }
+.project-row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.icon-btn { padding: 3px 7px; border-radius: 6px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 12px; line-height: 1.4; cursor: pointer; transition: all 0.15s; }
+.icon-btn:hover { background: var(--surface); color: var(--text); }
+.icon-btn-danger:hover { color: #ef4444; border-color: rgba(239,68,68,0.35); }
+.project-edit-input { flex: 1; padding: 5px 8px; margin-right: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; transition: border-color 0.15s; }
+.project-edit-input:focus { border-color: #2a3147; }
 .hidden-disclosure { width: 100%; padding: 8px 0; background: none; border: none; border-bottom: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 12px; font-weight: 500; cursor: pointer; text-align: left; letter-spacing: 0.3px; }
 .add-row { display: flex; gap: 8px; margin-top: 8px; }
 .add-input { flex: 1; padding: 11px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; transition: border-color 0.15s; }
