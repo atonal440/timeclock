@@ -1,6 +1,7 @@
 name: Update Visual Snapshots (scratch)
 on:
-  workflow_dispatch:
+  push:
+    branches: [ chore/update-visual-snapshots ]
 jobs:
   update:
     timeout-minutes: 60
