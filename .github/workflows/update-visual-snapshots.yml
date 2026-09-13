@@ -2,6 +2,8 @@ name: Update Visual Snapshots (scratch)
 on:
   push:
     branches: [ chore/update-visual-snapshots ]
+permissions:
+  contents: write
 jobs:
   update:
     timeout-minutes: 60
@@ -19,9 +21,14 @@ jobs:
       run: npm run build
     - name: Update snapshots
       run: npx playwright test --update-snapshots
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: updated-snapshots
-        path: tests/visual.spec.ts-snapshots/
-        retention-days: 7
+    - name: Commit updated snapshots back to this branch
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add tests/visual.spec.ts-snapshots
+        if git diff --cached --quiet; then
+          echo "No snapshot changes to commit"
+        else
+          git commit -m "Regenerate visual snapshots [skip ci]"
+          git push origin HEAD:chore/update-visual-snapshots
+        fi
