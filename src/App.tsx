@@ -197,6 +197,38 @@ export function App() {
     setProjects(prev => [...prev, p]);
   }
 
+  function renameProject(oldName: string, newName: string) {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) return;
+    setProjects(prev => Array.from(new Set(prev.map(p => p === oldName ? trimmed : p))));
+    setEntries(prev => prev.map(e => e.account === oldName ? { ...e, account: trimmed } : e));
+    setHiddenProjects(prev => {
+      const prevSet = prev instanceof Set ? prev : new Set(prev as unknown as string[]);
+      if (!prevSet.has(oldName)) return prevSet;
+      const next = new Set(prevSet);
+      next.delete(oldName);
+      next.add(trimmed);
+      return next;
+    });
+  }
+
+  function deleteProject(name: string) {
+    setModal({
+      title: 'Remove project?',
+      body: `"${name}" will be removed from your project list. Past sessions logged under it are kept.`,
+      onConfirm: () => {
+        setProjects(prev => prev.filter(p => p !== name));
+        setHiddenProjects(prev => {
+          const prevSet = prev instanceof Set ? prev : new Set(prev as unknown as string[]);
+          if (!prevSet.has(name)) return prevSet;
+          const next = new Set(prevSet);
+          next.delete(name);
+          return next;
+        });
+      }
+    });
+  }
+
   const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
@@ -290,6 +322,8 @@ export function App() {
             hiddenProjects={actualHiddenProjects}
             toggleHidden={toggleHidden}
             addProject={addProject}
+            renameProject={renameProject}
+            deleteProject={deleteProject}
             doExport={doExport}
             doImport={doImport}
             clearAll={clearAll}

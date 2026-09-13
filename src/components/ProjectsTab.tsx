@@ -12,6 +12,8 @@ interface ProjectsTabProps {
   hiddenProjects: Set<string>;
   toggleHidden: (p: string) => void;
   addProject: (p: string) => void;
+  renameProject: (oldName: string, newName: string) => void;
+  deleteProject: (p: string) => void;
   doExport: () => void;
   doImport: (text: string) => boolean;
   clearAll: () => void;
@@ -23,16 +25,33 @@ declare const __APP_VERSION__: string;
 
 export function ProjectsTab({
   concept, setConcept, scheme, setScheme, allProjectNames, hiddenProjects, toggleHidden,
-  addProject, doExport, doImport, clearAll, allSessions, days
+  addProject, renameProject, deleteProject, doExport, doImport, clearAll, allSessions, days
 }: ProjectsTabProps) {
   const [newProject, setNewProject] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState('');
   const [showHidden, setShowHidden] = useState(false);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   const handleAddProject = () => {
     addProject(newProject);
     setNewProject('');
+  };
+
+  const startEdit = (name: string) => {
+    setEditingProject(name);
+    setEditValue(name);
+  };
+
+  const cancelEdit = () => {
+    setEditingProject(null);
+    setEditValue('');
+  };
+
+  const commitEdit = () => {
+    if (editingProject) renameProject(editingProject, editValue);
+    cancelEdit();
   };
 
   const handleImport = () => {
@@ -102,20 +121,50 @@ export function ProjectsTab({
               const mid = parts.length > 2 ? parts.slice(1, -1).join(':') + ':' : null;
               const leaf = parts[parts.length - 1];
               const isHidden = hiddenProjects.has(name);
+              const isEditing = editingProject === name;
               return (
                 <div key={name} className="project-flat-row">
-                  <span className="project-path">
-                    {root && <span className="project-path-root">{root}</span>}
-                    {mid && <span className="project-path-mid">{mid}</span>}
-                    <span className="project-path-leaf">{leaf}</span>
-                  </span>
-                  <button
-                    className={`vis-btn ${isHidden ? 'vis-hidden' : 'vis-visible'}`}
-                    onClick={() => toggleHidden(name)}
-                    title={isHidden ? 'Show in Clock tab' : 'Hide from Clock tab'}
-                  >
-                    {isHidden ? 'hidden' : 'visible'}
-                  </button>
+                  {isEditing ? (
+                    <>
+                      <input
+                        className="project-edit-input"
+                        value={editValue}
+                        onChange={e => setEditValue(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') commitEdit();
+                          if (e.key === 'Escape') cancelEdit();
+                        }}
+                        autoFocus
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        aria-label={`Rename ${name}`}
+                      />
+                      <div className="project-row-actions">
+                        <button className="icon-btn" onClick={commitEdit} title="Save" aria-label="Save project name">✓</button>
+                        <button className="icon-btn" onClick={cancelEdit} title="Cancel" aria-label="Cancel rename">✕</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="project-path">
+                        {root && <span className="project-path-root">{root}</span>}
+                        {mid && <span className="project-path-mid">{mid}</span>}
+                        <span className="project-path-leaf">{leaf}</span>
+                      </span>
+                      <div className="project-row-actions">
+                        <button
+                          className={`vis-btn ${isHidden ? 'vis-hidden' : 'vis-visible'}`}
+                          onClick={() => toggleHidden(name)}
+                          title={isHidden ? 'Show in Clock tab' : 'Hide from Clock tab'}
+                        >
+                          {isHidden ? 'hidden' : 'visible'}
+                        </button>
+                        <button className="icon-btn" onClick={() => startEdit(name)} title="Rename project" aria-label={`Rename ${name}`}>✎</button>
+                        <button className="icon-btn icon-btn-danger" onClick={() => deleteProject(name)} title="Delete project" aria-label={`Delete ${name}`}>🗑</button>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             };
@@ -148,6 +197,9 @@ export function ProjectsTab({
             onKeyDown={e => e.key === 'Enter' && handleAddProject()}
             placeholder="Client:Project"
             aria-label="New project name"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
           />
           <button className="add-btn" onClick={handleAddProject} aria-label="Add project">＋</button>
         </div>

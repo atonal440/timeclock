@@ -161,6 +161,12 @@ html, body { background: var(--bg); }
 .vis-visible { background: var(--lime-badge-bg); border-color: var(--lime-badge-border); color: var(--on-badge, var(--lime)); }
 .vis-hidden { background: transparent; border-color: var(--border); color: var(--muted); }
 .vis-btn:hover { opacity: 0.75; }
+.project-row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.icon-btn { padding: 3px 7px; border-radius: 6px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-size: 12px; line-height: 1.4; cursor: pointer; transition: all 0.15s; }
+.icon-btn:hover { background: var(--surface); color: var(--text); }
+.icon-btn-danger:hover { color: #ef4444; border-color: rgba(239,68,68,0.35); }
+.project-edit-input { flex: 1; padding: 5px 8px; margin-right: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; transition: border-color 0.15s; }
+.project-edit-input:focus { border-color: #2a3147; }
 .hidden-disclosure { width: 100%; padding: 8px 0; background: none; border: none; border-bottom: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 12px; font-weight: 500; cursor: pointer; text-align: left; letter-spacing: 0.3px; }
 .add-row { display: flex; gap: 8px; margin-top: 8px; }
 .add-input { flex: 1; padding: 11px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; transition: border-color 0.15s; }
@@ -203,7 +209,7 @@ html, body { background: var(--bg); }
    ══════════════════════════════════════════════════════════════════════════ */
 
 /* Cards shared selector reference (per concept below):
-   .status-bar .project-btn .day-card .action-btn .theme-opt .edit-field .add-input .modal */
+   .status-bar .project-btn .day-card .action-btn .theme-opt .edit-field .add-input .project-edit-input .modal */
 
 /* ─────────────────────────  LIME · flat terminal  ───────────────────────── */
 [data-theme^="lime-"] .time-display.clocked-in { color: var(--lime); text-shadow: 0 0 30px var(--accent-glow); }
@@ -241,6 +247,7 @@ html, body { background: var(--bg); }
 [data-theme^="indigo-"] .theme-opt,
 [data-theme^="indigo-"] .edit-field,
 [data-theme^="indigo-"] .add-input,
+[data-theme^="indigo-"] .project-edit-input,
 [data-theme^="indigo-"] .modal,
 [data-theme^="indigo-"] .concept-opt { border-radius:14px; box-shadow:0 6px 18px var(--shadow-col); }
 [data-theme^="indigo-"] .time-display.clocked-in { color:var(--lime); text-shadow:0 0 26px var(--accent-glow); }
@@ -306,6 +313,7 @@ html, body { background: var(--bg); }
 [data-theme^="aurora-"] .theme-opt,
 [data-theme^="aurora-"] .edit-field,
 [data-theme^="aurora-"] .add-input,
+[data-theme^="aurora-"] .project-edit-input,
 [data-theme^="aurora-"] .modal,
 [data-theme^="aurora-"] .concept-opt {
   -webkit-backdrop-filter:blur(16px) saturate(1.4); backdrop-filter:blur(16px) saturate(1.4);
@@ -372,6 +380,7 @@ html, body { background: var(--bg); }
 [data-theme^="sunset-"] .theme-opt,
 [data-theme^="sunset-"] .edit-field,
 [data-theme^="sunset-"] .add-input,
+[data-theme^="sunset-"] .project-edit-input,
 [data-theme^="sunset-"] .modal,
 [data-theme^="sunset-"] .concept-opt {
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
@@ -444,6 +453,7 @@ html, body { background: var(--bg); }
 [data-theme^="crt-"] .theme-opt,
 [data-theme^="crt-"] .edit-field,
 [data-theme^="crt-"] .add-input,
+[data-theme^="crt-"] .project-edit-input,
 [data-theme^="crt-"] .modal,
 [data-theme^="crt-"] .concept-opt,
 [data-theme^="crt-"] .project-badge { border-radius:2px; }
@@ -494,6 +504,7 @@ html, body { background: var(--bg); }
 [data-theme^="brutal-"] .theme-opt,
 [data-theme^="brutal-"] .edit-field,
 [data-theme^="brutal-"] .add-input,
+[data-theme^="brutal-"] .project-edit-input,
 [data-theme^="brutal-"] .modal,
 [data-theme^="brutal-"] .concept-opt { border:3px solid var(--hard-ink); border-radius:0; box-shadow:5px 5px 0 var(--hard-ink); }
 [data-theme^="brutal-"] .status-bar.active { background: var(--brutal-active); }
@@ -546,6 +557,7 @@ html, body { background: var(--bg); }
 [data-theme^="clay-"] .theme-opt,
 [data-theme^="clay-"] .edit-field,
 [data-theme^="clay-"] .add-input,
+[data-theme^="clay-"] .project-edit-input,
 [data-theme^="clay-"] .modal,
 [data-theme^="clay-"] .concept-opt,
 [data-theme^="clay-"] .nav { border:none; border-radius:24px; box-shadow:8px 8px 18px var(--neu-d), -8px -8px 18px var(--neu-l); }
