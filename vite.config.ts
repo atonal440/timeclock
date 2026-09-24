@@ -2,17 +2,38 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+
+function git(cmd: string): string {
+  try {
+    return execSync(`git ${cmd}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    return ''
+  }
+}
+
+// Build stamp shown in the Projects tab footer, e.g. "a1b2c3d main · 2026-09-24 14:05Z".
+// CI passes BUILD_SHA/BUILD_REF because PR checkouts are detached merge commits.
+const sha = (process.env.BUILD_SHA || git('rev-parse HEAD')).slice(0, 7) || 'unknown'
+const ref = process.env.BUILD_REF || git('rev-parse --abbrev-ref HEAD')
+const builtAt = new Date().toISOString().slice(0, 16).replace('T', ' ') + 'Z'
+const appVersion = [sha, ref && ref !== 'HEAD' ? ref : '', '·', builtAt].filter(Boolean).join(' ')
+
+// PR preview builds (PREVIEW_BUILD=1) skip the service worker: previews live
+// under the live app's origin and shouldn't install or cache anything there.
+const isPreviewBuild = process.env.PREVIEW_BUILD === '1'
 
 // https://vite.dev/config/
 export default defineConfig({
   // Use relative base for GitHub Pages compatibility
   base: './',
   define: {
-    __APP_VERSION__: JSON.stringify(Date.now().toString())
+    __APP_VERSION__: JSON.stringify(appVersion)
   },
   plugins: [
     react(),
     VitePWA({
+      disable: isPreviewBuild,
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
@@ -59,10 +80,13 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg}'],
-        globIgnores: ['**/index.html'],
+        globIgnores: ['**/index.html', 'pr-preview/**'],
+        // PR previews under /pr-preview/ are separate apps; leave them alone.
+        navigateFallbackDenylist: [/\/pr-preview\//],
         runtimeCaching: [
           {
-            urlPattern: ({ request, url }) => request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('index.html'),
+            urlPattern: ({ request, url }) => !url.pathname.includes('/pr-preview/') &&
+              (request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('index.html')),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'html-cache',

@@ -1,5 +1,5 @@
 
-interface EditSessionData {
+export interface EditSessionData {
   inIdx: number;
   outIdx: number | null;
   account: string;

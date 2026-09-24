@@ -2,12 +2,13 @@ import { chromium } from '@playwright/test';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import { chromiumExecutable } from '../scripts/chromium-path.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, 'shots');
 fs.mkdirSync(OUT, { recursive: true });
 
-const CHROME = join(process.env.HOME, '.cache/ms-playwright/chromium-1223/chrome-linux/chrome');
+const CHROME = chromiumExecutable();
 const URL = 'http://localhost:5173/';
 
 // ── Seed data: a realistic state, currently clocked in ──────────────────────

@@ -4,11 +4,12 @@ import { dirname, join } from 'path';
 import fs from 'fs';
 import { PNG } from 'pngjs';
 import gifenc from 'gifenc';
+import { chromiumExecutable } from '../scripts/chromium-path.mjs';
 const { GIFEncoder, quantize, applyPalette } = gifenc;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, 'shots-pairs');
-const CHROME = join(process.env.HOME, '.cache/ms-playwright/chromium-1223/chrome-linux/chrome');
+const CHROME = chromiumExecutable();
 const URL = 'http://localhost:5173/';
 const SEL = '.status-bar.active .status-account::after';
 const PERIOD = 1.1, N = 14;

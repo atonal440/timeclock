@@ -12,9 +12,13 @@
   <script>
     // Prevent FOUC: resolve concept (weekday-aware) + scheme (OS-aware) early.
     // Keep the DOW list in sync with src/utils/themes.ts.
+    // PR previews (/pr-preview/pr-N/) read their own copy once they've forked
+    // from live data; keep in sync with src/utils/preview.ts.
     try {
-      var concept = JSON.parse(localStorage.getItem('tc-concept')) || 'auto';
-      var scheme = JSON.parse(localStorage.getItem('tc-scheme')) || 'system';
+      var m = location.pathname.match(/\/pr-preview\/pr-(\d+)\//);
+      var pfx = m && localStorage.getItem('preview:pr-' + m[1] + ':__forked') !== null ? 'preview:pr-' + m[1] + ':' : '';
+      var concept = JSON.parse(localStorage.getItem(pfx + 'tc-concept')) || 'auto';
+      var scheme = JSON.parse(localStorage.getItem(pfx + 'tc-scheme')) || 'system';
       var DOW = ['clay', 'indigo', 'aurora', 'sunset', 'crt', 'brutal', 'lime'];
       var c = concept === 'auto' ? DOW[new Date().getDay()] : concept;
       var s = scheme === 'system'

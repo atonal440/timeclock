@@ -2,10 +2,11 @@ import { chromium } from '@playwright/test';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
+import { chromiumExecutable } from '../scripts/chromium-path.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIR = join(__dirname, 'shots-pairs');
-const CHROME = join(process.env.HOME, '.cache/ms-playwright/chromium-1223/chrome-linux/chrome');
+const CHROME = chromiumExecutable();
 
 const CONCEPTS = [
   { day:'Sunday',    id:'clay',   name:'Soft Clay' },

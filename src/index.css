@@ -608,3 +608,7 @@ html, body { background: var(--bg); }
 .concept-name { font-family: var(--ui); font-size: 13px; font-weight: 600; color: var(--text); }
 .concept-opt.active .concept-name { color: var(--lime); }
 .concept-day { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+
+/* PR preview banner (only rendered under /pr-preview/pr-N/) */
+.preview-banner { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: max(6px, env(safe-area-inset-top)) 16px 6px; background: var(--amber, #f59e0b); color: #111; font-family: var(--ui); font-size: 12px; line-height: 1.3; }
+.preview-reset { flex-shrink: 0; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.35); background: rgba(255,255,255,0.35); color: #111; font-family: var(--ui); font-size: 12px; font-weight: 600; cursor: pointer; }

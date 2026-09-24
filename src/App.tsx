@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { loadData } from './utils/storage';
-import type { Entry } from './utils/timeclock';
+import type { Entry, SessionData } from './utils/timeclock';
 import { parseTimeclockFile, exportTimeclock, fmtDuration,
   calcSessions, groupByDay
 } from './utils/timeclock';
@@ -12,11 +12,15 @@ import { ClockTab } from './components/ClockTab';
 import { LogTab } from './components/LogTab';
 import { ProjectsTab } from './components/ProjectsTab';
 import { EditModal } from './components/EditModal';
+import type { EditSessionData } from './components/EditModal';
+import { PreviewBanner } from './components/PreviewBanner';
+import { preview, resetPreview, cleanupClosedPreviews } from './utils/preview';
 
 interface ModalState {
   title: string;
   body: string;
   onConfirm: () => void;
+  confirmLabel?: string;
 }
 
 export function App() {
@@ -44,12 +48,26 @@ export function App() {
   const [modal, setModal] = useState<ModalState | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
-  const [editSession, setEditSession] = useState<any>(null);
+  const [editSession, setEditSession] = useState<EditSessionData | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Drop stored copies from PR previews whose PR has since closed.
+  useEffect(() => {
+    if (import.meta.env.PROD) cleanupClosedPreviews();
+  }, []);
+
+  function confirmResetPreview() {
+    setModal({
+      title: 'Discard preview data?',
+      body: 'This preview will go back to reading your live data. Changes made in this preview are lost; live data is untouched.',
+      confirmLabel: 'Discard',
+      onConfirm: () => { resetPreview(); location.reload(); },
+    });
+  }
 
   // Track the OS light/dark preference so 'daily' mode can pick the matching
   // scheme from each day's light/dark pair.
@@ -108,7 +126,7 @@ export function App() {
     setTimeout(() => setToast(null), 2500);
   }
 
-  function openEdit(s: any) {
+  function openEdit(s: SessionData) {
     setEditSession({
       inIdx: s.inIdx,
       outIdx: s.outIdx,
@@ -167,8 +185,8 @@ export function App() {
       setProjects(prev => Array.from(new Set([...prev, ...accs])));
       showToast(`Imported ${parsed.length} entries.`);
       return true;
-    } catch (e: any) {
-      showToast('Parse error: ' + e.message);
+    } catch (e) {
+      showToast('Parse error: ' + (e instanceof Error ? e.message : String(e)));
       return false;
     }
   }
@@ -234,6 +252,7 @@ export function App() {
 
   return (
     <div className="app">
+      {preview && <PreviewBanner pr={preview.pr} onReset={confirmResetPreview} />}
 
       {editSession && <EditModal
         editSession={editSession}
@@ -249,7 +268,7 @@ export function App() {
             <div className="modal-body">{modal.body}</div>
             <div className="modal-btns">
               <button className="modal-cancel" onClick={() => setModal(null)}>Cancel</button>
-              <button className="modal-confirm" onClick={() => { modal.onConfirm(); setModal(null); }}>Delete</button>
+              <button className="modal-confirm" onClick={() => { modal.onConfirm(); setModal(null); }}>{modal.confirmLabel ?? 'Delete'}</button>
             </div>
           </div>
         </div>
