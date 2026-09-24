@@ -30,5 +30,8 @@ dist-ssr
 /playwright/.cache/
 /playwright/.auth/
 
-# Claude Code local machine config
-.claude/
+# Claude Code: commit shared settings/hooks/skills, ignore per-machine config
+.claude/settings.local.json
+
+# Phone-size screenshots from scripts/shots.mjs
+/shots/

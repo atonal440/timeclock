@@ -1,0 +1,63 @@
+name: Update visual snapshots
+
+# Regenerates tests/visual.spec.ts-snapshots/ for every browser project and
+# commits them to the branch. Trigger by adding the `update-snapshots` label to
+# a PR (works from the GitHub mobile app), or run it manually on a branch.
+
+on:
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  update:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'update-snapshots' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npm run build
+      - name: Update snapshots
+        run: npx playwright test tests/visual.spec.ts --update-snapshots
+      - name: Commit changes
+        id: commit
+        run: |
+          git add tests/visual.spec.ts-snapshots
+          if git diff --cached --quiet; then
+            echo "No snapshot changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Update visual regression snapshots"
+            git push origin "HEAD:$BRANCH"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Remove label
+        if: always() && github.event_name == 'pull_request'
+        run: gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --remove-label update-snapshots
+      # Pushes made with GITHUB_TOKEN don't trigger workflows, but a dispatch
+      # does, so start CI on the new commit explicitly. (Only works once
+      # playwright.yml with workflow_dispatch is on the default branch.)
+      - name: Re-run Playwright CI
+        if: steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        run: gh workflow run playwright.yml --repo ${{ github.repository }} --ref "$BRANCH"

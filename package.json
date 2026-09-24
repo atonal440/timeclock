@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "postbuild": "cp dist/manifest.webmanifest dist/manifest.json",
+    "postbuild": "if [ -f dist/manifest.webmanifest ]; then cp dist/manifest.webmanifest dist/manifest.json; fi",
+    "check": "npm run lint && npm test && npm run build",
+    "shots": "node scripts/shots.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"

@@ -19,7 +19,7 @@ export function ClockTab({ isClockedIn, projects, hiddenProjects, currentAccount
       <div className="project-grid">
         {projects.filter(p => !hiddenProjects.has(p)).map(p => {
           const isCurrent = p === currentAccount;
-          const accountMs = todayDay?.sessions.filter((s: any) => s.account === p && s.ms).reduce((a: number, s: any) => a + s.ms, 0) || 0;
+          const accountMs = todayDay?.sessions.filter(s => s.account === p && s.ms).reduce((a, s) => a + (s.ms ?? 0), 0) || 0;
           return (
             <button
               key={p}

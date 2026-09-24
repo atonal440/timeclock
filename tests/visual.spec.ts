@@ -5,11 +5,11 @@ test('visual regression verification', async ({ page }) => {
   await page.addInitScript(() => {
     const OriginalDate = window.Date;
     class MockDate extends OriginalDate {
-      constructor(...args: any[]) {
+      constructor(...args: ConstructorParameters<typeof Date> | []) {
         if (args.length === 0) {
           super('2024-01-01T12:00:00Z');
         } else {
-          super(...args as []);
+          super(...(args as [string]));
         }
       }
     }
@@ -18,7 +18,7 @@ test('visual regression verification', async ({ page }) => {
     MockDate.parse = OriginalDate.parse;
     MockDate.UTC = OriginalDate.UTC;
 
-    (window as any).Date = MockDate;
+    (window as unknown as { Date: DateConstructor }).Date = MockDate as DateConstructor;
 
     // Pin a deterministic appearance so the snapshot is stable regardless of
     // the weekday ('auto' rotates the concept) or the runner's color-scheme.
