@@ -23,8 +23,11 @@ const LIVE = {
                  { type: 'o', datetime: '2024-01-01T10:00:00.000Z' }],
 };
 
+// Seed from a blank page on the same origin: if the app were running, its
+// mount-time write-back could land after the seed and overwrite it (WebKit).
 async function seedLive(page: Page) {
-  await page.goto('/');
+  await page.route('**/__seed', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html>' }));
+  await page.goto('/__seed');
   await page.evaluate(data => {
     localStorage.clear();
     for (const [k, v] of Object.entries(data)) localStorage.setItem(k, JSON.stringify(v));
