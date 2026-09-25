@@ -49,6 +49,27 @@ export function exportTimeclock(entries: Entry[]): string {
   ).join('\n') + '\n';
 }
 
+function csvField(v: string): string {
+  return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+// One row per session, local time. Open sessions have blank End/Hours.
+export function exportCsv(sessions: SessionData[]): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  const stamp = (d: Date) => `${d.toLocaleDateString('en-CA')} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  const rows = [['Date', 'Project', 'Start', 'End', 'Hours']];
+  for (const s of sessions) {
+    rows.push([
+      s.date,
+      s.account ?? '',
+      stamp(s.startDt),
+      s.endDt ? stamp(s.endDt) : '',
+      s.ms !== null ? (s.ms / 3600000).toFixed(2) : '',
+    ]);
+  }
+  return rows.map(r => r.map(csvField).join(',')).join('\r\n') + '\r\n';
+}
+
 export function fmtDuration(ms: number): string {
   if (ms <= 0) return '0h 00m';
   const m = Math.floor(ms / 60000);

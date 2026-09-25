@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { loadData } from './utils/storage';
 import type { Entry, SessionData } from './utils/timeclock';
-import { parseTimeclockFile, exportTimeclock, fmtDuration,
+import { parseTimeclockFile, exportTimeclock, exportCsv, fmtDuration,
   calcSessions, groupByDay
 } from './utils/timeclock';
 import { conceptFor, themeId } from './utils/themes';
@@ -191,12 +191,20 @@ export function App() {
     }
   }
 
-  function doExport() {
-    const blob = new Blob([exportTimeclock(entries)], { type: 'text/plain' });
+  function download(content: string, type: string, filename: string) {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'timeclock.journal'; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
-    showToast('Downloaded timeclock.journal');
+    showToast(`Downloaded ${filename}`);
+  }
+
+  function doExport() {
+    download(exportTimeclock(entries), 'text/plain', 'timeclock.journal');
+  }
+
+  function doExportCsv() {
+    download(exportCsv(allSessions), 'text/csv', 'timeclock.csv');
   }
 
   function toggleHidden(p: string) {
@@ -344,6 +352,7 @@ export function App() {
             renameProject={renameProject}
             deleteProject={deleteProject}
             doExport={doExport}
+            doExportCsv={doExportCsv}
             doImport={doImport}
             clearAll={clearAll}
             allSessions={allSessions}

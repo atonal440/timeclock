@@ -15,6 +15,7 @@ interface ProjectsTabProps {
   renameProject: (oldName: string, newName: string) => void;
   deleteProject: (p: string) => void;
   doExport: () => void;
+  doExportCsv: () => void;
   doImport: (text: string) => boolean;
   clearAll: () => void;
   allSessions: SessionData[];
@@ -25,7 +26,7 @@ declare const __APP_VERSION__: string;
 
 export function ProjectsTab({
   concept, setConcept, scheme, setScheme, allProjectNames, hiddenProjects, toggleHidden,
-  addProject, renameProject, deleteProject, doExport, doImport, clearAll, allSessions, days
+  addProject, renameProject, deleteProject, doExport, doExportCsv, doImport, clearAll, allSessions, days
 }: ProjectsTabProps) {
   const [newProject, setNewProject] = useState('');
   const [showImport, setShowImport] = useState(false);
@@ -211,6 +212,7 @@ export function ProjectsTab({
       <div className="settings-section">
         <div className="section-label">Data</div>
         <button className="action-btn" onClick={doExport}>⬇︎  Export timeclock.journal</button>
+        <button className="action-btn" onClick={doExportCsv}>⬇︎  Export CSV</button>
         <button className="action-btn" onClick={() => setShowImport(!showImport)}>⬆︎  Import timeclock file</button>
 
         {showImport && (
@@ -228,7 +230,7 @@ export function ProjectsTab({
         )}
 
         <div className="hint">
-          Export produces a standard hledger timeclock file. Import merges with existing data — duplicates are skipped.
+          Export produces a standard hledger timeclock file; CSV has one row per session for spreadsheets. Import merges with existing data — duplicates are skipped.
         </div>
         <button className="danger-btn" onClick={clearAll}>⚠  Clear all data</button>
       </div>
