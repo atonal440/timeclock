@@ -103,6 +103,7 @@ PR builds are served at `<site>/pr-preview/pr-<N>/`, on the same origin as the l
 - `groupByDay(sessions)` — groups into `DayData[]` sorted newest-first
 - `parseTimeclockFile(content)` — parses hledger timeclock text into `Entry[]`
 - `exportTimeclock(entries)` — serializes `Entry[]` to hledger timeclock format
+- `exportCsv(sessions)` — serializes `SessionData[]` to CSV (Date, Project, Start, End, Hours; local time, one row per session)
 - `fmtDuration(ms)` — formats milliseconds as `Xh YYm`
 - `fmtDate`, `fmtTime`, `formatTC` — date/time formatters
 
