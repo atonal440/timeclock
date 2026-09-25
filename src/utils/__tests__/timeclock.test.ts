@@ -111,4 +111,14 @@ describe('exportCsv', () => {
     ];
     expect(exportCsv(calcSessions(entries))).toContain('2024-01-01,"Acme, Inc:The ""Big"" One",');
   });
+
+  it('keeps project names that look like formulas from being evaluated', () => {
+    const rows = ['=HYPERLINK("x")', '+1', '-2', '@SUM(A1)'].map(account =>
+      exportCsv(calcSessions([
+        { type: 'i', datetime: at(9), account },
+        { type: 'o', datetime: at(10) },
+      ])).split('\r\n')[1].split(',')[1]
+    );
+    expect(rows).toEqual(['"\'=HYPERLINK(""x"")"', "'+1", "'-2", "'@SUM(A1)"]);
+  });
 });

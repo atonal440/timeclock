@@ -49,6 +49,12 @@ export function exportTimeclock(entries: Entry[]): string {
   ).join('\n') + '\n';
 }
 
+// Spreadsheets run a cell starting with = + - @ (or tab/CR) as a formula;
+// a leading apostrophe makes it plain text. Only for free-text fields.
+function csvText(v: string): string {
+  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+}
+
 function csvField(v: string): string {
   return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
@@ -61,7 +67,7 @@ export function exportCsv(sessions: SessionData[]): string {
   for (const s of sessions) {
     rows.push([
       s.date,
-      s.account ?? '',
+      csvText(s.account ?? ''),
       stamp(s.startDt),
       s.endDt ? stamp(s.endDt) : '',
       s.ms !== null ? (s.ms / 3600000).toFixed(2) : '',
