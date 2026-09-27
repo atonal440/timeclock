@@ -106,6 +106,28 @@ describe('mergeEntries', () => {
     expect(merged).toHaveLength(6);
     expect(merged[0].account).toBe('X');
   });
+
+  it('keeps back-to-back sessions from different lists paired', () => {
+    const remote: Entry[] = [{ type: 'i', datetime: iso(9), account: 'R' }, { type: 'o', datetime: iso(10) }];
+    const local: Entry[] = [{ type: 'i', datetime: iso(10), account: 'L' }, { type: 'o', datetime: iso(11) }];
+    for (const [a, b] of [[local, remote], [remote, local]]) {
+      const sessions = calcSessions(mergeEntries(a, b));
+      expect(sessions.map(s => [s.account, s.ms, !!s.broken])).toEqual([['R', 3600000, false], ['L', 3600000, false]]);
+    }
+  });
+
+  it('keeps project switches and zero-length sessions intact', () => {
+    const list: Entry[] = [
+      { type: 'i', datetime: iso(9), account: 'A' }, { type: 'o', datetime: iso(10) },
+      { type: 'i', datetime: iso(10), account: 'B' }, { type: 'o', datetime: iso(10) },
+      { type: 'i', datetime: iso(10), account: 'C' }, { type: 'o', datetime: iso(11) },
+    ];
+    // A zero-length B between A and C can't survive any time-only sort,
+    // but merging with nothing new must not reorder a valid log.
+    expect(mergeEntries(list, [])).toEqual(list);
+    const zero: Entry[] = [{ type: 'i', datetime: iso(12), account: 'Z' }, { type: 'o', datetime: iso(12) }];
+    expect(calcSessions(mergeEntries(base, zero)).map(s => s.account)).toEqual(['A', 'Z', 'B']);
+  });
 });
 
 describe('fmtAgo', () => {

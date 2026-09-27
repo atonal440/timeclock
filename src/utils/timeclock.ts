@@ -159,11 +159,29 @@ export function placeSession(
   return { entries: next };
 }
 
-/** Union of two entry lists, skipping duplicates (same datetime + type). */
+/**
+ * Union of two entry lists, skipping duplicates (same datetime + type), in
+ * time order. Each list keeps its own order for equal times (so a valid log
+ * is never rearranged); between the two lists, a clock-out goes before a
+ * clock-in at the same time, so a session ending exactly when one from the
+ * other list starts stays paired.
+ */
 export function mergeEntries(prev: Entry[], incoming: Entry[]): Entry[] {
+  const byTime = (list: Entry[]) => [...list].sort((a, b) => a.datetime.localeCompare(b.datetime));
   const existing = new Set(prev.map(e => e.datetime + e.type));
-  return [...prev, ...incoming.filter(e => !existing.has(e.datetime + e.type))]
-    .sort((a, b) => a.datetime.localeCompare(b.datetime));
+  const a = byTime(prev);
+  const b = byTime(incoming).filter(e => !existing.has(e.datetime + e.type));
+  // At a tie, a clock-out that closes an earlier clock-in comes first, then
+  // clock-ins, then the clock-out of a zero-length session.
+  const rank = (list: Entry[], k: number) => list[k].type === 'i' ? 1
+    : k > 0 && list[k - 1].type === 'i' && list[k - 1].datetime === list[k].datetime ? 2 : 0;
+  const out: Entry[] = [];
+  let i = 0, j = 0;
+  while (i < a.length && j < b.length) {
+    const c = a[i].datetime.localeCompare(b[j].datetime) || rank(a, i) - rank(b, j);
+    out.push(c <= 0 ? a[i++] : b[j++]);
+  }
+  return out.concat(a.slice(i), b.slice(j));
 }
 
 /** `YYYY-MM-DD` shifted by whole calendar days (DST-safe). */
