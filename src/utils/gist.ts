@@ -29,6 +29,11 @@ export class GistError extends Error {
   }
 }
 
+/** Offline, rate-limited or a GitHub outage: worth retrying later. */
+export function isTransient(e: unknown): boolean {
+  return e instanceof GistError && (e.status === 0 || e.status === 429 || e.status >= 500);
+}
+
 /** Accepts a bare gist ID or any gist.github.com URL. */
 export function parseGistId(input: string): string | null {
   const t = input.trim();
@@ -54,8 +59,10 @@ export function backupFiles(state: BackupState): Record<string, string> {
 export function parseBackupJson(text: string): BackupState {
   const data = JSON.parse(text);
   if (!data || !Array.isArray(data.entries)) throw new GistError(`${JSON_FILE} has no entries.`);
+  // Clock-ins need a project name; the UI assumes every session has one.
   const entries: Entry[] = data.entries.filter((e: Entry) =>
-    e && (e.type === 'i' || e.type === 'o') && typeof e.datetime === 'string' && !isNaN(Date.parse(e.datetime))
+    e && typeof e.datetime === 'string' && !isNaN(Date.parse(e.datetime)) &&
+    (e.type === 'o' || (e.type === 'i' && typeof e.account === 'string' && e.account.trim() !== ''))
   );
   const strings = (v: unknown) => Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
   return { entries, projects: strings(data.projects), hiddenProjects: strings(data.hiddenProjects) };

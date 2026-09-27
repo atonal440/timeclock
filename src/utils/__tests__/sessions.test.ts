@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { placeSession, mergeEntries, calcSessions, fmtAgo, addDays, daysBetween, type Entry } from '../timeclock';
-import { parseGistId, backupFiles, parseBackupJson, JOURNAL_FILE, JSON_FILE } from '../gist';
+import { parseGistId, backupFiles, parseBackupJson, isTransient, GistError, JOURNAL_FILE, JSON_FILE } from '../gist';
 
 const at = (h: number, m = 0, day = 1) => new Date(2024, 0, day, h, m);
 const iso = (h: number, m = 0, day = 1) => at(h, m, day).toISOString();
@@ -140,5 +140,23 @@ describe('gist helpers', () => {
     expect(parsed.entries).toEqual([base[0]]);
     expect(parsed.projects).toEqual([]);
     expect(() => parseBackupJson('{}')).toThrow();
+  });
+
+  it('drops clock-ins without a project name', () => {
+    const t = '2024-01-01T09:00:00.000Z';
+    const parsed = parseBackupJson(JSON.stringify({ entries: [
+      { type: 'i', datetime: t }, { type: 'i', datetime: t, account: 42 }, { type: 'i', datetime: t, account: ' ' },
+      { type: 'i', datetime: t, account: 'A' },
+    ] }));
+    expect(parsed.entries).toEqual([{ type: 'i', datetime: t, account: 'A' }]);
+  });
+
+  it('only retries transient errors', () => {
+    expect(isTransient(new GistError('offline'))).toBe(true);
+    expect(isTransient(new GistError('x', 502))).toBe(true);
+    expect(isTransient(new GistError('x', 429))).toBe(true);
+    expect(isTransient(new GistError('x', 401))).toBe(false);
+    expect(isTransient(new GistError('x', 404))).toBe(false);
+    expect(isTransient(new Error('x'))).toBe(false);
   });
 });

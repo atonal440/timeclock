@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { preview } from '../utils/preview';
 import type { BackupState } from '../utils/gist';
-import { backupFiles, createGist, readGist, updateGist, parseGistId } from '../utils/gist';
+import { backupFiles, createGist, readGist, updateGist, parseGistId, isTransient } from '../utils/gist';
 
 export interface SyncConfig {
   token: string;
@@ -16,6 +16,9 @@ export interface SyncConfig {
 export type SyncStatus = 'off' | 'idle' | 'syncing' | 'error';
 
 const PUSH_DELAY = 2000;
+// After a transient failure, retry after 5s, 10s, 20s… up to every 5 minutes.
+const RETRY_BASE = 5000;
+const RETRY_MAX = 5 * 60_000;
 // fetch keepalive (used when the app is backgrounded) caps bodies at 64 KiB.
 const KEEPALIVE_MAX = 60_000;
 
@@ -38,6 +41,8 @@ export function useGistSync(state: BackupState, onRestore: (s: BackupState) => v
   const [config, setConfig] = useLocalStorage<SyncConfig | null>('tc-sync', null);
   const [status, setStatus] = useState<SyncStatus>(config ? 'idle' : 'off');
   const [error, setError] = useState<string | null>(null);
+  // Consecutive transient push failures; drives the retry backoff.
+  const [failures, setFailures] = useState(0);
   const enabled = !!config && !preview;
 
   const files = useMemo(() => backupFiles(state), [state]);
@@ -61,9 +66,12 @@ export function useGistSync(state: BackupState, onRestore: (s: BackupState) => v
         : prev);
       setError(null);
       setStatus('idle');
+      setFailures(0);
     } catch (e) {
       setError(message(e));
       setStatus('error');
+      // Auth/permission errors won't fix themselves; don't hammer the API.
+      setFailures(n => isTransient(e) ? n + 1 : 0);
     } finally {
       inFlight.current = false;
     }
@@ -76,6 +84,13 @@ export function useGistSync(state: BackupState, onRestore: (s: BackupState) => v
     const id = setTimeout(() => push(), PUSH_DELAY);
     return () => clearTimeout(id);
   }, [enabled, config, contentHash, push]);
+
+  // Retry a push that failed for a transient reason, backing off.
+  useEffect(() => {
+    if (!enabled || !failures || config!.pushedHash === contentHash) return;
+    const id = setTimeout(() => push(), Math.min(RETRY_BASE * 2 ** (failures - 1), RETRY_MAX));
+    return () => clearTimeout(id);
+  }, [enabled, failures, config, contentHash, push]);
 
   useEffect(() => {
     if (!enabled) return;

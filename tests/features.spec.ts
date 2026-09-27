@@ -226,6 +226,34 @@ test('Gist sync creates a secret gist and pushes changes', async ({ page }) => {
   expect(JSON.parse(calls[1].body.files['timeclock.json'].content).entries).toHaveLength(1);
 });
 
+test('a push that fails transiently is retried on its own', async ({ page }) => {
+  let patches = 0;
+  await page.route('https://api.github.com/gists**', async route => {
+    const post = route.request().method() === 'POST';
+    const fail = !post && ++patches === 1;
+    await route.fulfill({
+      status: post ? 201 : fail ? 502 : 200,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ id: 'abc123def456abc123def456', html_url: 'https://gist.github.com/abc123def456abc123def456' }),
+    });
+  });
+  await seed(page, PROJECTS);
+  await page.goto('/');
+  await page.locator('.nav-btn', { hasText: 'Projects' }).click();
+  await page.getByLabel('GitHub token').fill('ghp_test');
+  await page.getByRole('button', { name: 'Create secret gist' }).click();
+  await expect(page.locator('.sync-status')).toContainText('Up to date');
+
+  await page.locator('.nav-btn', { hasText: 'Clock' }).click();
+  await page.locator('.project-btn', { hasText: 'Garden' }).click();
+  await page.locator('.nav-btn', { hasText: 'Projects' }).click();
+  await expect(page.locator('.sync-status')).toContainText('Not synced: GitHub error 502');
+  // No further edits: the retry alone gets it through.
+  await expect(page.locator('.sync-status')).toContainText('Up to date', { timeout: 15_000 });
+  expect(patches).toBe(2);
+});
+
 test('connecting to an existing gist merges its data first', async ({ page }) => {
   const remote = {
     entries: [{ type: 'i', datetime: '2024-03-05T09:00:00.000Z', account: 'Remote:Job' },
