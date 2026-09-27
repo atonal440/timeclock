@@ -620,6 +620,7 @@ html, body { background: var(--bg); }
 .stale-note { background: none; border: none; padding: 0; text-align: left; font-family: var(--mono); font-size: 12px; color: var(--amber); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Undo toast: the action button needs to take taps */
+.toast { white-space: normal; width: max-content; max-width: calc(100vw - 40px); text-align: center; }
 .toast.has-action { display: flex; align-items: center; gap: 14px; pointer-events: auto; padding: 8px 10px 8px 18px; }
 .toast-action { background: none; border: none; padding: 4px 8px; font-family: var(--ui); font-size: 13px; font-weight: 700; color: var(--lime); cursor: pointer; letter-spacing: 0.5px; text-transform: uppercase; }
 

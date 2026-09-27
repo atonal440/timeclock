@@ -109,8 +109,8 @@ PR builds are served at `<site>/pr-preview/pr-<N>/`, on the same origin as the l
 **Key pure functions** in `src/utils/timeclock.ts`:
 - `calcSessions(entries)` — pairs `i`/`o` entries into `SessionData[]`
 - `groupByDay(sessions)` — groups into `DayData[]` sorted newest-first
-- `parseTimeclockFile(content)` — parses hledger timeclock text into `Entry[]`
-- `exportTimeclock(entries)` — serializes `Entry[]` to hledger timeclock format
+- `parseTimeclock(content)` — parses hledger timeclock text into `{ entries, skipped }` (see below); `parseTimeclockFile` returns just the entries
+- `exportTimeclock(entries)` — serializes `Entry[]` to hledger timeclock format; a clock-in missing its clock-out (other than the running one) or a clock-out with no clock-in is written as a `;` comment line
 - `exportCsv(sessions)` — serializes `SessionData[]` to CSV (Date, Project, Start, End, Hours; local time, one row per session)
 - `placeSession(entries, session, replace?)` — adds or moves a session, keeping entries in chronological in/out pairs; returns `{ error }` on overlap, backwards or future times. All manual edits go through it.
 - `mergeEntries(prev, incoming)` — union, deduped by `datetime + type` (import and Gist restore)
@@ -131,6 +131,8 @@ o YYYY/MM/DD HH:MM
 ```
 
 Import merges with existing data; duplicates (same `datetime + type`) are skipped.
+
+The importer follows hledger 1.50's timeclock rules where it can: comment lines (`#`/`;`/`*`) and `b`/`h`/`O` lines are ignored, descriptions (after 2+ spaces) and `;` comments are dropped, and a clock-out naming an account closes that session (otherwise the most recent open one). hledger allows concurrent sessions but TimeClock tracks one at a time, so a session overlapping an earlier one is skipped and reported; a never-closed clock-in is kept (shown as missing a clock-out unless it's the latest). hledger runs an unclosed clock-in until "now", which is why the export comments such entries out instead.
 
 ## Backup & Gist sync
 

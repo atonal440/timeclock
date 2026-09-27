@@ -28,27 +28,103 @@ export function formatTC(date: string | Date): string {
   return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-export function parseTimeclockFile(content: string): Entry[] {
-  const entries: Entry[] = [];
-  for (const line of content.trim().split('\n')) {
-    const t = line.trim();
-    if (!t) continue;
-    const p = t.split(/\s+/);
-    if (p[0] === 'i' && p.length >= 4) {
-      const dt = new Date(`${p[1].replace(/\//g, '-')}T${p[2]}`);
-      if (!isNaN(dt.getTime())) entries.push({ type: 'i', datetime: dt.toISOString(), account: p.slice(3).join(' ') });
-    } else if (p[0] === 'o' && p.length >= 3) {
-      const dt = new Date(`${p[1].replace(/\//g, '-')}T${p[2]}`);
-      if (!isNaN(dt.getTime())) entries.push({ type: 'o', datetime: dt.toISOString() });
-    }
-  }
-  return entries;
+export interface ParsedTimeclock {
+  entries: Entry[];
+  /** Human-readable reasons for lines or sessions that couldn't be imported. */
+  skipped: string[];
 }
 
+const ENTRY_LINE = /^([io])\s+(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\s+(\d{2}):(\d{2})(?::(\d{2}))?(?:[+-]\d{4})?(?:\s+(.*))?$/;
+
+/**
+ * Read an hledger timeclock file. Follows hledger 1.50's rules: comment
+ * lines (`#`, `;`, `*`) and `b`/`h`/`O` lines are ignored; a clock-in's
+ * description (after 2+ spaces) and any `;` comment are dropped; a
+ * clock-out naming an account closes that session, otherwise the most
+ * recent open one. TimeClock tracks one session at a time, so sessions
+ * that overlap an earlier one are skipped (and listed in `skipped`); a
+ * session never clocked out is kept as an open clock-in.
+ */
+export function parseTimeclock(content: string): ParsedTimeclock {
+  const skipped: string[] = [];
+  type Open = { account: string; start: Date; line: number };
+  const open: Open[] = []; // most recent last
+  const sessions: { account: string; start: Date; end: Date | null }[] = [];
+
+  content.split(/\r?\n/).forEach((raw, n) => {
+    const line = raw.trim();
+    const where = `line ${n + 1}`;
+    if (!line || /^([#;*]|[bhO]\s)/.test(line)) return;
+    const m = line.match(ENTRY_LINE);
+    if (!m) { skipped.push(`${where}: not a timeclock entry`); return; }
+    const [, code, y, mo, d, hh, mm, ss, rest = ''] = m;
+    const dt = new Date(+y, +mo - 1, +d, +hh, +mm, +(ss ?? 0));
+    if (isNaN(dt.getTime()) || dt.getMonth() !== +mo - 1) { skipped.push(`${where}: invalid date`); return; }
+    const text = rest.split(';')[0];
+    if (code === 'i') {
+      const account = text.split(/\s{2,}|\t/)[0].trim();
+      if (!account) { skipped.push(`${where}: clock-in without an account`); return; }
+      if (open.some(o => o.account === account)) {
+        skipped.push(`${where}: ${account} is already clocked in`);
+        return;
+      }
+      open.push({ account, start: dt, line: n + 1 });
+    } else {
+      const named = text.trim();
+      const k = named ? open.findLastIndex(o => o.account === named) : open.length - 1;
+      if (k === -1) { skipped.push(`${where}: clock-out with no matching clock-in`); return; }
+      const [o] = open.splice(k, 1);
+      if (dt < o.start) { skipped.push(`${where}: clock-out before its clock-in (line ${o.line})`); return; }
+      sessions.push({ account: o.account, start: o.start, end: dt });
+    }
+  });
+  for (const o of open) sessions.push({ account: o.account, start: o.start, end: null });
+
+  // Keep sessions that don't overlap one already kept. An unclosed session
+  // is just a point (its clock-in), so it only conflicts if it falls inside
+  // a kept session.
+  sessions.sort((a, b) => a.start.getTime() - b.start.getTime());
+  const entries: Entry[] = [];
+  let busyUntil = -Infinity;
+  for (const s of sessions) {
+    const start = s.start.getTime();
+    if (start < busyUntil) {
+      skipped.push(`${s.account} at ${fmtStamp(s.start)}: overlaps another session`);
+      continue;
+    }
+    entries.push({ type: 'i', datetime: s.start.toISOString(), account: s.account });
+    if (s.end) {
+      entries.push({ type: 'o', datetime: s.end.toISOString() });
+      busyUntil = s.end.getTime();
+    }
+  }
+  return { entries, skipped };
+}
+
+export function parseTimeclockFile(content: string): Entry[] {
+  return parseTimeclock(content).entries;
+}
+
+function fmtStamp(d: Date): string {
+  return `${d.toLocaleDateString('en-CA')} ${fmtTime(d)}`;
+}
+
+/**
+ * hledger timeclock text. A clock-in with no clock-out after it (other than
+ * the running one) or a clock-out with no clock-in is written as a comment:
+ * hledger would otherwise count the stray clock-in as running until now, or
+ * reject the file.
+ */
 export function exportTimeclock(entries: Entry[]): string {
-  return entries.map(e =>
-    e.type === 'i' ? `i ${formatTC(e.datetime)} ${e.account}` : `o ${formatTC(e.datetime)}`
-  ).join('\n') + '\n';
+  return entries.map((e, k) => {
+    const prev = entries[k - 1], next = entries[k + 1];
+    if (e.type === 'i') {
+      const line = `i ${formatTC(e.datetime)} ${e.account}`;
+      return next && next.type !== 'o' ? `; ${line}  (no clock-out; fix it in TimeClock)` : line;
+    }
+    const line = `o ${formatTC(e.datetime)}`;
+    return prev?.type === 'i' ? line : `; ${line}  (no clock-in)`;
+  }).join('\n') + '\n';
 }
 
 // Spreadsheets run a cell starting with = + - @ (or tab/CR) as a formula;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
-import { exportTimeclock, exportCsv, calcSessions, type Entry } from '../timeclock';
+import { exportTimeclock, exportCsv, calcSessions, parseTimeclock, type Entry } from '../timeclock';
 
 describe('exportTimeclock', () => {
   beforeAll(() => {
@@ -25,13 +25,37 @@ describe('exportTimeclock', () => {
   });
 
   it('formats an "o" (clock-out) entry correctly', () => {
-    const date1 = new Date(2024, 0, 1, 12, 30, 0);
     const entries: Entry[] = [
-      { type: 'o', datetime: date1.toISOString() }
+      { type: 'i', datetime: new Date(2024, 0, 1, 9, 0, 0).toISOString(), account: 'A' },
+      { type: 'o', datetime: new Date(2024, 0, 1, 12, 30, 0).toISOString() }
     ];
 
     const res = exportTimeclock(entries);
-    expect(res).toBe('o 2024/01/01 12:30\n');
+    expect(res.split('\n')[1]).toBe('o 2024/01/01 12:30');
+  });
+
+  it('comments out a clock-out with no clock-in, which hledger rejects', () => {
+    const entries: Entry[] = [
+      { type: 'o', datetime: new Date(2024, 0, 1, 12, 30, 0).toISOString() }
+    ];
+    expect(exportTimeclock(entries)).toBe('; o 2024/01/01 12:30  (no clock-in)\n');
+  });
+
+  it('comments out a clock-in missing its clock-out but keeps the running one', () => {
+    const at = (h: number) => new Date(2024, 0, 1, h, 0, 0).toISOString();
+    const entries: Entry[] = [
+      { type: 'i', datetime: at(9), account: 'Stray' },
+      { type: 'i', datetime: at(10), account: 'A' },
+      { type: 'o', datetime: at(11) },
+      { type: 'i', datetime: at(12), account: 'Running' },
+    ];
+    expect(exportTimeclock(entries).split('\n')).toEqual([
+      '; i 2024/01/01 09:00 Stray  (no clock-out; fix it in TimeClock)',
+      'i 2024/01/01 10:00 A',
+      'o 2024/01/01 11:00',
+      'i 2024/01/01 12:00 Running',
+      '',
+    ]);
   });
 
   it('handles a typical sequence of clock-in and clock-out entries', () => {
@@ -120,5 +144,60 @@ describe('exportCsv', () => {
       ])).split('\r\n')[1].split(',')[1]
     );
     expect(rows).toEqual(['"\'=HYPERLINK(""x"")"', "'+1", "'-2", "'@SUM(A1)"]);
+  });
+});
+
+describe('parseTimeclock', () => {
+  const at = (d: number, h: number, m = 0, s = 0) => new Date(2015, 2, d, h, m, s).toISOString();
+
+  it('reads plain entries in either date style, with or without seconds', () => {
+    const { entries, skipped } = parseTimeclock('i 2015/03/30 09:00 A:B\no 2015-03-30 10:15:30\n');
+    expect(entries).toEqual([
+      { type: 'i', datetime: at(30, 9), account: 'A:B' },
+      { type: 'o', datetime: at(30, 10, 15, 30) },
+    ]);
+    expect(skipped).toEqual([]);
+  });
+
+  it('drops descriptions, comments, comment lines and b/h/O lines', () => {
+    const { entries, skipped } = parseTimeclock([
+      '# comment', '; comment', '* comment', 'b 2015/03/30 08:00 ignored', '',
+      'i 2015/03/30 09:00:00 some account  optional description ; tags:',
+      'o 2015/03/30 09:20:00 ; done',
+      'O 2015/03/30 10:00 ignored',
+    ].join('\n'));
+    expect(entries).toEqual([
+      { type: 'i', datetime: at(30, 9), account: 'some account' },
+      { type: 'o', datetime: at(30, 9, 20) },
+    ]);
+    expect(skipped).toEqual([]);
+  });
+
+  it('pairs named clock-outs and skips the overlapping session', () => {
+    // hledger's own example: another:account 12-15 with some account 13-14 inside it.
+    const { entries, skipped } = parseTimeclock([
+      'i 2015/04/02 12:00:00 another:account  ; concurrent',
+      'i 2015/04/02 13:00:00 some account',
+      'o 2015/04/02 14:00:00',
+      'o 2015/04/02 15:00:00 another:account',
+    ].join('\n'));
+    const sessions = calcSessions(entries);
+    expect(sessions.map(s => [s.account, s.ms])).toEqual([['another:account', 3 * 3600000]]);
+    expect(skipped).toEqual([expect.stringContaining('some account')]);
+  });
+
+  it('keeps an unclosed clock-in as open and reports junk lines', () => {
+    const { entries, skipped } = parseTimeclock('i 2015/03/30 09:00 A\no 2015/03/30 10:00\ni 2015/03/31 09:00 B\nhello\no 2015/03/31 08:00 Nope\n');
+    expect(calcSessions(entries).map(s => [s.account, s.endDt === null])).toEqual([['A', false], ['B', true]]);
+    expect(skipped).toEqual(['line 4: not a timeclock entry', 'line 5: clock-out with no matching clock-in']);
+  });
+
+  it('round-trips an export, ignoring commented-out strays', () => {
+    const log: Entry[] = [
+      { type: 'i', datetime: at(30, 8), account: 'Stray' },
+      { type: 'i', datetime: at(30, 9), account: 'A' },
+      { type: 'o', datetime: at(30, 10) },
+    ];
+    expect(parseTimeclock(exportTimeclock(log)).entries).toEqual(log.slice(1));
   });
 });

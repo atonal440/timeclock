@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { loadData } from './utils/storage';
 import type { Entry, SessionData } from './utils/timeclock';
-import { parseTimeclockFile, exportTimeclock, exportCsv, fmtDuration, fmtAgo,
+import { parseTimeclock, exportTimeclock, exportCsv, fmtDuration, fmtAgo,
   calcSessions, groupByDay, placeSession, mergeEntries, localDateTime, addDays
 } from './utils/timeclock';
 import type { BackupState } from './utils/gist';
@@ -149,7 +149,7 @@ export function App() {
   function showToast(msg: string, undo?: ToastState['undo']) {
     clearTimeout(toastTimer.current);
     setToast({ msg, undo });
-    toastTimer.current = setTimeout(() => setToast(null), undo ? 5000 : 2500);
+    toastTimer.current = setTimeout(() => setToast(null), undo || msg.length > 60 ? 6000 : 2500);
   }
 
   /** Replace the log and offer to put the previous one back. */
@@ -268,12 +268,14 @@ export function App() {
 
   function doImport(importText: string): boolean {
     try {
-      const parsed = parseTimeclockFile(importText);
-      if (!parsed.length) { showToast('No valid entries found.'); return false; }
+      const { entries: parsed, skipped } = parseTimeclock(importText);
+      const why = skipped.length ? ` Skipped ${skipped.length}: ${skipped[0]}${skipped.length > 1 ? ', …' : ''}` : '';
+      if (!parsed.length) { showToast(`No valid entries found.${why}`); return false; }
       setEntries(prev => mergeEntries(prev, parsed));
       const accs = parsed.filter(e => e.type === 'i').map(e => e.account!);
       setProjects(prev => Array.from(new Set([...prev, ...accs])));
-      showToast(`Imported ${parsed.length} entries.`);
+      const sessions = parsed.filter(e => e.type === 'i').length;
+      showToast(`Imported ${sessions} session${sessions === 1 ? '' : 's'}.${why}`);
       return true;
     } catch (e) {
       showToast('Parse error: ' + (e instanceof Error ? e.message : String(e)));

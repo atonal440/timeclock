@@ -196,6 +196,25 @@ test('backup reminder appears for an old, never-backed-up log', async ({ page })
   await expect(page.locator('.backup-nudge')).toHaveCount(0);
 });
 
+test('importing an hledger file drops descriptions and reports overlapping sessions', async ({ page }) => {
+  await seed(page, PROJECTS);
+  await page.goto('/');
+  await page.locator('.nav-btn', { hasText: 'Projects' }).click();
+  await page.getByRole('button', { name: /Import timeclock file/ }).click();
+  await page.getByLabel('Import timeclock data').fill([
+    'i 2015/03/30 09:00:00 some account  optional description after 2 spaces ; optional comment, tags:',
+    'o 2015/03/30 09:20:00',
+    'i 2015/04/02 12:00:00 another:account  ; this demonstrates multiple sessions being clocked in',
+    'i 2015/04/02 13:00:00 some account',
+    'o 2015/04/02 14:00:00',
+    'o 2015/04/02 15:00:00 another:account',
+  ].join('\n'));
+  await page.getByRole('button', { name: 'Import & Merge' }).click();
+  await expect(page.locator('.toast')).toContainText('Imported 2 sessions. Skipped 1: some account at 2015-04-02 13:00: overlaps another session');
+  const accounts = (await entries(page)).map((e: { account?: string }) => e.account).filter(Boolean);
+  expect(accounts).toEqual(['some account', 'another:account']);
+});
+
 test('Gist sync creates a secret gist and pushes changes', async ({ page }) => {
   const calls: { method: string; body: { public?: boolean; files: Record<string, { content: string }> } }[] = [];
   await page.route('https://api.github.com/gists**', async route => {
