@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { placeSession, mergeEntries, calcSessions, fmtAgo, type Entry } from '../timeclock';
+import { placeSession, mergeEntries, calcSessions, fmtAgo, addDays, daysBetween, type Entry } from '../timeclock';
 import { parseGistId, backupFiles, parseBackupJson, JOURNAL_FILE, JSON_FILE } from '../gist';
 
 const at = (h: number, m = 0, day = 1) => new Date(2024, 0, day, h, m);
@@ -70,6 +70,17 @@ describe('placeSession', () => {
     const next = ok(placeSession(running, { account: 'R', start: at(14, 30), end: null }, { inIdx: 4, outIdx: null }, NOW));
     expect(next.at(-1)).toEqual({ type: 'i', datetime: iso(14, 30), account: 'R' });
     expect(placeSession(running, { account: 'R', start: at(13, 30), end: null }, { inIdx: 4, outIdx: null }, NOW)).toHaveProperty('error');
+  });
+});
+
+describe('calendar day helpers', () => {
+  it('adds days across month/year ends and DST changes', () => {
+    expect(addDays('2024-01-31', 1)).toBe('2024-02-01');
+    expect(addDays('2024-12-31', 1)).toBe('2025-01-01');
+    expect(addDays('2024-03-10', 1)).toBe('2024-03-11');
+    expect(addDays('2024-11-03', -1)).toBe('2024-11-02');
+    expect(daysBetween('2024-03-09', '2024-03-12')).toBe(3);
+    expect(daysBetween('2024-03-12', '2024-03-09')).toBe(-3);
   });
 });
 

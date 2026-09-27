@@ -628,6 +628,8 @@ html, body { background: var(--bg); }
 .add-entry-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-family: var(--ui); font-size: 12px; color: var(--text); cursor: pointer; }
 .add-entry-btn:hover { background: var(--surface); }
 
+.edit-pair { display: flex; gap: 8px; }
+.edit-pair .edit-field { flex: 1; min-width: 0; }
 .edit-label-note { letter-spacing: 1px; text-transform: none; color: var(--amber); }
 .form-error { font-size: 12px; color: #ef4444; line-height: 1.4; margin: 4px 0 8px; }
 

@@ -27,6 +27,7 @@ test('add a past session from the Log tab, rejecting overlaps', async ({ page })
   await page.getByRole('button', { name: /Add entry/ }).click();
   await page.locator('#edit-account').selectOption('Garden');
   await page.locator('#edit-date').fill('2024-03-05');
+  await page.locator('#edit-end-date').fill('2024-03-05');
   await page.locator('#edit-start-time').fill('09:00');
   await page.locator('#edit-end-time').fill('10:30');
   await page.getByRole('button', { name: 'Save' }).click();
@@ -38,6 +39,7 @@ test('add a past session from the Log tab, rejecting overlaps', async ({ page })
   // Overlapping the first one is refused with a message.
   await page.getByRole('button', { name: /Add entry/ }).click();
   await page.locator('#edit-date').fill('2024-03-05');
+  await page.locator('#edit-end-date').fill('2024-03-05');
   await page.locator('#edit-start-time').fill('10:00');
   await page.locator('#edit-end-time').fill('11:00');
   await page.getByRole('button', { name: 'Save' }).click();
@@ -58,6 +60,26 @@ test('an edit can run past midnight', async ({ page }) => {
   await expect(page.locator('.edit-label-note')).toContainText('next day');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.locator('.day-total')).toHaveText('3h 15m');
+});
+
+test('editing a multi-day session keeps its end date', async ({ page }) => {
+  await seed(page, { ...PROJECTS, 'tc-entries': [
+    { type: 'i', datetime: new Date(2024, 2, 4, 9, 0).toISOString(), account: 'Garden' },
+    { type: 'o', datetime: new Date(2024, 2, 5, 10, 0).toISOString() },
+  ] });
+  await page.goto('/');
+  await page.locator('.nav-btn', { hasText: 'Log' }).click();
+  await page.getByRole('button', { name: 'Edit session' }).click();
+  await expect(page.locator('#edit-end-date')).toHaveValue('2024-03-05');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('.day-total')).toHaveText('25h 00m');
+
+  // Moving the start date carries the end date along.
+  await page.getByRole('button', { name: 'Edit session' }).click();
+  await page.locator('#edit-date').fill('2024-03-01');
+  await expect(page.locator('#edit-end-date')).toHaveValue('2024-03-02');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('.day-card', { hasText: 'Mar 1' }).locator('.day-total')).toHaveText('25h 00m');
 });
 
 test('delete and clock-in can be undone', async ({ page }) => {

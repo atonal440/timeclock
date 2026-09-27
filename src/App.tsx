@@ -3,7 +3,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { loadData } from './utils/storage';
 import type { Entry, SessionData } from './utils/timeclock';
 import { parseTimeclockFile, exportTimeclock, exportCsv, fmtDuration, fmtAgo,
-  calcSessions, groupByDay, placeSession, mergeEntries, localDateTime
+  calcSessions, groupByDay, placeSession, mergeEntries, localDateTime, addDays
 } from './utils/timeclock';
 import type { BackupState } from './utils/gist';
 import { useGistSync } from './hooks/useGistSync';
@@ -198,6 +198,7 @@ export function App() {
       account: s.account,
       date: s.date,
       startTime: fmtInputTime(s.startDt),
+      endDate: s.endDt ? s.endDt.toLocaleDateString('en-CA') : null,
       endTime: s.endDt ? fmtInputTime(s.endDt) : null
     });
   }
@@ -209,6 +210,7 @@ export function App() {
       account: projects.find(p => !actualHiddenProjects.has(p)) ?? projects[0] ?? '',
       date: start.toLocaleDateString('en-CA'),
       startTime: fmtInputTime(start),
+      endDate: end.toLocaleDateString('en-CA'),
       endTime: fmtInputTime(end),
     });
   }
@@ -220,10 +222,10 @@ export function App() {
   function saveSession(d: SessionDraft): string | null {
     const start = localDateTime(d.date, d.startTime);
     let end: Date | null = null;
-    if (d.endTime !== null) {
-      end = localDateTime(d.date, d.endTime);
-      // An end at or before the start means the session ran past midnight.
-      if (d.endTime <= d.startTime) end = new Date(end.getTime() + DAY_MS);
+    if (d.endTime !== null && d.endDate !== null) {
+      // Same-day end at or before the start means it ran past midnight.
+      const endDate = d.endDate === d.date && d.endTime <= d.startTime ? addDays(d.endDate, 1) : d.endDate;
+      end = localDateTime(endDate, d.endTime);
     }
     const isNew = d.inIdx === undefined;
     const result = placeSession(entries, { account: d.account, start, end },

@@ -158,6 +158,17 @@ export function mergeEntries(prev: Entry[], incoming: Entry[]): Entry[] {
     .sort((a, b) => a.datetime.localeCompare(b.datetime));
 }
 
+/** `YYYY-MM-DD` shifted by whole calendar days (DST-safe). */
+export function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(y, m - 1, d + days).toLocaleDateString('en-CA');
+}
+
+/** Whole calendar days from one `YYYY-MM-DD` to another. */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(to + 'T00:00:00Z') - Date.parse(from + 'T00:00:00Z')) / 86400000);
+}
+
 /** A local Date from `YYYY-MM-DD` + `HH:MM` form values. */
 export function localDateTime(date: string, time: string): Date {
   return new Date(`${date}T${time}:00`);
