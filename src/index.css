@@ -612,3 +612,43 @@ html, body { background: var(--bg); }
 /* PR preview banner (only rendered under /pr-preview/pr-N/) */
 .preview-banner { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: max(6px, env(safe-area-inset-top)) 16px 6px; background: var(--amber, #f59e0b); color: #111; font-family: var(--ui); font-size: 12px; line-height: 1.3; }
 .preview-reset { flex-shrink: 0; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.35); background: rgba(255,255,255,0.35); color: #111; font-family: var(--ui); font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* Clock out now / at an earlier time */
+.clock-out-row { display: flex; gap: 8px; }
+.clock-out-row .clock-out-btn { flex: 1; }
+.clock-out-row .clock-out-at { flex: 0 0 auto; width: auto; padding: 10px 16px; }
+.stale-note { background: none; border: none; padding: 0; text-align: left; font-family: var(--mono); font-size: 12px; color: var(--amber); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Undo toast: the action button needs to take taps */
+.toast.has-action { display: flex; align-items: center; gap: 14px; pointer-events: auto; padding: 8px 10px 8px 18px; }
+.toast-action { background: none; border: none; padding: 4px 8px; font-family: var(--ui); font-size: 13px; font-weight: 700; color: var(--lime); cursor: pointer; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* Log tab header with Add entry */
+.section-head { display: flex; justify-content: space-between; align-items: baseline; }
+.add-entry-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-family: var(--ui); font-size: 12px; color: var(--text); cursor: pointer; }
+.add-entry-btn:hover { background: var(--surface); }
+
+.edit-label-note { letter-spacing: 1px; text-transform: none; color: var(--amber); }
+.form-error { font-size: 12px; color: #ef4444; line-height: 1.4; margin: 4px 0 8px; }
+
+/* Backup reminder on the Clock tab */
+.backup-nudge { margin: 4px 0 16px; padding: 12px 14px; border-radius: 10px; background: var(--surface); border: 1px dashed var(--amber); }
+.backup-nudge-text { font-size: 13px; color: var(--muted); line-height: 1.45; }
+.backup-nudge-text strong { color: var(--text); }
+.backup-nudge-btns { display: flex; gap: 6px; margin-top: 10px; }
+.nudge-btn { flex: 1; padding: 8px 4px; border-radius: 7px; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: var(--ui); font-size: 13px; cursor: pointer; }
+.nudge-btn.primary { background: var(--lime-badge-bg); border-color: var(--lime-dim); color: var(--on-badge, var(--lime)); font-weight: 600; }
+
+/* Backup & sync settings */
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.stat-key { font-size: 13px; color: var(--muted); }
+.stat-val { font-family: var(--mono); font-size: 13px; }
+.sync-input { width: 100%; margin-bottom: 8px; }
+.sync-status { margin: 12px 0 8px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--lime-dim); background: var(--lime-bg); font-size: 13px; color: var(--text); }
+.sync-status.error { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); }
+.sync-status a { color: var(--lime); }
+.sync-status-line { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 4px; }
+.hint a { color: var(--text); }
+.hint code { font-family: var(--mono); font-size: 10.5px; white-space: nowrap; }
+.hint .cmd-block { display: block; margin: 6px 0; padding: 8px 10px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); overflow-x: auto; }
+.action-btn:disabled, .confirm-btn:disabled { opacity: 0.5; cursor: default; }

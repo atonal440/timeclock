@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { DayData, SessionData } from '../utils/timeclock';
 import { fmtDuration } from '../utils/timeclock';
 import { DAY_CONCEPTS, conceptFor } from '../utils/themes';
+import type { useGistSync } from '../hooks/useGistSync';
+import { SyncSection } from './SyncSection';
 
 interface ProjectsTabProps {
   concept: string;
@@ -20,13 +22,17 @@ interface ProjectsTabProps {
   clearAll: () => void;
   allSessions: SessionData[];
   days: DayData[];
+  sync: ReturnType<typeof useGistSync>;
+  lastBackup: string | null;
+  persisted: boolean | null;
 }
 
 declare const __APP_VERSION__: string;
 
 export function ProjectsTab({
   concept, setConcept, scheme, setScheme, allProjectNames, hiddenProjects, toggleHidden,
-  addProject, renameProject, deleteProject, doExport, doExportCsv, doImport, clearAll, allSessions, days
+  addProject, renameProject, deleteProject, doExport, doExportCsv, doImport, clearAll, allSessions, days,
+  sync, lastBackup, persisted
 }: ProjectsTabProps) {
   const [newProject, setNewProject] = useState('');
   const [showImport, setShowImport] = useState(false);
@@ -208,6 +214,8 @@ export function ProjectsTab({
           Use hledger-style names like Client:ProjectTag. Toggle visibility to show or hide projects in the Clock tab.
         </div>
       </div>
+
+      <SyncSection sync={sync} lastBackup={lastBackup} persisted={persisted} />
 
       <div className="settings-section">
         <div className="section-label">Data</div>

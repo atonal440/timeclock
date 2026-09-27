@@ -4,17 +4,21 @@ import { fmtDate, fmtDuration, fmtTime } from '../utils/timeclock';
 interface LogTabProps {
   days: DayData[];
   openEdit: (s: SessionData) => void;
+  openAdd: () => void;
   deleteSession: (inIdx: number, outIdx: number | null) => void;
 }
 
-export function LogTab({ days, openEdit, deleteSession }: LogTabProps) {
+export function LogTab({ days, openEdit, openAdd, deleteSession }: LogTabProps) {
   return (
     <>
-      <div className="section-label" style={{ marginTop: 4 }}>Sessions</div>
+      <div className="section-head">
+        <div className="section-label" style={{ marginTop: 4 }}>Sessions</div>
+        <button className="add-entry-btn" onClick={openAdd}>＋ Add entry</button>
+      </div>
       {days.length === 0 ? (
         <div className="empty-state">
           <span className="icon">📋</span>
-          No entries yet. Clock in to start tracking.
+          No entries yet. Clock in to start tracking, or add a past session.
         </div>
       ) : (
         days.slice(0, 60).map(day => (

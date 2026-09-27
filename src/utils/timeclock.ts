@@ -99,6 +99,70 @@ export function calcSessions(entries: Entry[]): SessionData[] {
   return sessions;
 }
 
+export interface SessionInput {
+  account: string;
+  start: Date;
+  /** null keeps the session open (only valid as the latest session). */
+  end: Date | null;
+}
+
+/**
+ * Add a session, or move/replace an existing one (`replace` gives its entry
+ * indices), keeping `entries` in chronological in/out pairs so calcSessions
+ * still pairs them. Refuses a session that overlaps another one, runs
+ * backwards, or starts in the future.
+ */
+export function placeSession(
+  entries: Entry[],
+  s: SessionInput,
+  replace?: { inIdx: number; outIdx: number | null },
+  now: Date = new Date()
+): { entries: Entry[] } | { error: string } {
+  const startMs = s.start.getTime();
+  const endMs = s.end?.getTime() ?? null;
+  if (isNaN(startMs) || (endMs !== null && isNaN(endMs))) return { error: 'Enter a valid date and time.' };
+  if (!s.account) return { error: 'Pick a project.' };
+  if (endMs !== null && endMs <= startMs) return { error: 'End must be after start.' };
+  if (startMs > now.getTime() || (endMs ?? 0) > now.getTime()) return { error: "Times can't be in the future." };
+
+  const rest = replace
+    ? entries.filter((_, i) => i !== replace.inIdx && i !== replace.outIdx)
+    : [...entries];
+
+  for (const o of calcSessions(rest)) {
+    const oStart = o.startDt.getTime();
+    const oEnd = o.endDt?.getTime() ?? Infinity;
+    const end = endMs ?? Infinity;
+    if (startMs < oEnd && end > oStart) {
+      return { error: `Overlaps ${o.account} (${fmtTime(o.startDt)}–${o.endDt ? fmtTime(o.endDt) : 'now'}).` };
+    }
+  }
+
+  const inEntry: Entry = { type: 'i', datetime: s.start.toISOString(), account: s.account };
+  if (endMs === null) return { entries: [...rest, inEntry] };
+
+  // Insert before the first entry after our start; on a tie an 'i' sorts
+  // after us (a session may end exactly when the next one starts).
+  const startIso = inEntry.datetime;
+  let pos = rest.findIndex(e => e.datetime > startIso || (e.datetime === startIso && e.type === 'i'));
+  if (pos === -1) pos = rest.length;
+  const next = [...rest];
+  next.splice(pos, 0, inEntry, { type: 'o', datetime: s.end!.toISOString() });
+  return { entries: next };
+}
+
+/** Union of two entry lists, skipping duplicates (same datetime + type). */
+export function mergeEntries(prev: Entry[], incoming: Entry[]): Entry[] {
+  const existing = new Set(prev.map(e => e.datetime + e.type));
+  return [...prev, ...incoming.filter(e => !existing.has(e.datetime + e.type))]
+    .sort((a, b) => a.datetime.localeCompare(b.datetime));
+}
+
+/** A local Date from `YYYY-MM-DD` + `HH:MM` form values. */
+export function localDateTime(date: string, time: string): Date {
+  return new Date(`${date}T${time}:00`);
+}
+
 export function groupByDay(sessions: SessionData[]): DayData[] {
   const days: Record<string, DayData> = {};
   for (const s of sessions) {
@@ -107,6 +171,17 @@ export function groupByDay(sessions: SessionData[]): DayData[] {
     if (s.ms) days[s.date].totalMs += s.ms;
   }
   return Object.values(days).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** "just now", "5 min ago", "3 h ago", "12 days ago". */
+export function fmtAgo(from: Date | string, now: Date = new Date()): string {
+  const min = Math.floor((now.getTime() - new Date(from).getTime()) / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min} min ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? '1 day ago' : `${d} days ago`;
 }
 
 export function fmtDate(dateStr: string): string {
