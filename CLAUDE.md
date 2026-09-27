@@ -29,10 +29,12 @@ src/
   index.css                      # all CSS (CSS custom properties, no CSS modules)
   hooks/
     useLocalStorage.ts           # generic hook: useState + localStorage sync
+    useGistSync.ts               # mirrors data to a secret gist (debounced push, restore)
   utils/
     timeclock.ts                 # pure data functions + TypeScript types
     storage.ts                   # localStorage read/write wrappers (preview-aware, see below)
     preview.ts                   # PR preview detection + copy-on-write storage namespace
+    gist.ts                      # GitHub Gist API calls + backup file format
     __tests__/
       timeclock.test.ts          # Vitest unit tests for timeclock.ts
   components/
@@ -40,7 +42,10 @@ src/
     ClockTab.tsx                 # project buttons grid for clocking in/out
     LogTab.tsx                   # session history grouped by day
     ProjectsTab.tsx              # project management, theme toggle, data import/export
-    EditModal.tsx                # modal for editing an existing session
+    SessionModal.tsx             # add a past session / edit one (date, times, past-midnight ends)
+    ClockOutModal.tsx            # clock out at an earlier time; also the forgotten-clock-out prompt
+    BackupNudge.tsx              # Clock-tab reminder when data hasn't been backed up
+    SyncSection.tsx              # Projects-tab Backup & sync settings (GitHub Gist)
     PreviewBanner.tsx            # banner shown only in PR preview builds
 scripts/
   chromium-path.mjs              # resolves a Chromium binary for Playwright (local fallback)
@@ -68,6 +73,9 @@ tests/
 | `tc-hidden-projects` | `string[]` (stored as array, used as `Set`) | Projects hidden from the Clock tab |
 | `tc-concept` | `'auto' \| 'clay' \| 'indigo' \| 'aurora' \| 'sunset' \| 'crt' \| 'brutal' \| 'lime'` | Theme concept (button/card treatment); `'auto'` rotates by weekday |
 | `tc-scheme` | `'light' \| 'dark' \| 'system'` | Color scheme |
+| `tc-sync` | `{ token, gistId, gistUrl, lastSyncAt?, pushedHash? } \| null` | Gist sync config (token is a `gist`-scope PAT) |
+| `tc-backup` | `{ exportedAt?, snoozedUntil? }` | Last journal export + backup-reminder snooze |
+| `tc-stale-ok` | `string \| null` | Start time of a long-running session the user said is still going (suppresses the forgot-to-clock-out prompt) |
 
 `useLocalStorage` stores `Set` values as arrays (JSON can't serialize `Set`). `App.tsx` converts `tc-hidden-projects` back to a `Set` after loading. Always go through `utils/storage.ts` — never call `localStorage` directly — so PR previews stay isolated.
 
@@ -101,9 +109,11 @@ PR builds are served at `<site>/pr-preview/pr-<N>/`, on the same origin as the l
 **Key pure functions** in `src/utils/timeclock.ts`:
 - `calcSessions(entries)` — pairs `i`/`o` entries into `SessionData[]`
 - `groupByDay(sessions)` — groups into `DayData[]` sorted newest-first
-- `parseTimeclockFile(content)` — parses hledger timeclock text into `Entry[]`
-- `exportTimeclock(entries)` — serializes `Entry[]` to hledger timeclock format
+- `parseTimeclock(content)` — parses hledger timeclock text into `{ entries, skipped }` (see below); `parseTimeclockFile` returns just the entries
+- `exportTimeclock(entries)` — serializes `Entry[]` to hledger timeclock format; a clock-in missing its clock-out (other than the running one) or a clock-out with no clock-in is written as a `;` comment line
 - `exportCsv(sessions)` — serializes `SessionData[]` to CSV (Date, Project, Start, End, Hours; local time, one row per session)
+- `placeSession(entries, session, replace?)` — adds or moves a session, keeping entries in chronological in/out pairs; returns `{ error }` on overlap, backwards or future times. All manual edits go through it.
+- `mergeLog(prev, incoming)` — merges another log a session at a time (import and Gist restore): duplicates (same clock-in time) are skipped, incoming sessions overlapping existing ones are skipped and counted; returns `{ entries, added, skipped }`. `mergeEntries` returns just the entries.
 - `fmtDuration(ms)` — formats milliseconds as `Xh YYm`
 - `fmtDate`, `fmtTime`, `formatTC` — date/time formatters
 
@@ -120,7 +130,15 @@ i YYYY/MM/DD HH:MM Account:Name
 o YYYY/MM/DD HH:MM
 ```
 
-Import merges with existing data; duplicates (same `datetime + type`) are skipped.
+Import merges with existing data via `mergeLog`: duplicates are skipped, and sessions overlapping ones already logged are skipped and reported.
+
+The importer follows hledger 1.50's timeclock rules where it can: comment lines (`#`/`;`/`*`) and `b`/`h`/`O` lines are ignored, descriptions (after 2+ spaces) and `;` comments are dropped, and a clock-out naming an account closes that session (otherwise the most recent open one). hledger allows concurrent sessions but TimeClock tracks one at a time, so a session overlapping an earlier one is skipped and reported; a never-closed clock-in is kept (shown as missing a clock-out unless it's the latest). hledger runs an unclosed clock-in until "now", which is why the export comments such entries out instead.
+
+## Backup & Gist sync
+
+`navigator.storage.persist()` is requested at startup. Log changes (clock in/out, add/edit/delete) go through `commit()` in `App.tsx`, which shows an Undo toast.
+
+With a token set up in Projects → Backup & sync, `useGistSync` pushes `timeclock.journal` (hledger) and `timeclock.json` (entries, projects, hidden projects) to a secret gist 2s after each change and when the app is backgrounded. It's a one-way mirror of this device; Restore (and connecting to an existing gist) merges the gist's entries in and never deletes locally. Sync is disabled in PR previews so a preview can't overwrite the real backup.
 
 ## Theming
 
