@@ -135,9 +135,17 @@ export function placeSession(
     : [...entries];
 
   for (const o of calcSessions(rest)) {
-    // A broken session has no known end, so it can't be overlapped.
-    if (o.broken) continue;
     const oStart = o.startDt.getTime();
+    // A broken session has no known end, so only its clock-in is a fixed
+    // point: a new session may end at it but not contain it (the log would
+    // stop being chronological).
+    if (o.broken) {
+      if (startMs <= oStart && (endMs ?? Infinity) > oStart) {
+        const day = o.startDt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return { error: `Contains ${o.account}'s clock-in with no clock-out (${day}, ${fmtTime(o.startDt)}). Fix that one first.` };
+      }
+      continue;
+    }
     const oEnd = o.endDt?.getTime() ?? Infinity;
     const end = endMs ?? Infinity;
     if (startMs < oEnd && end > oStart) {

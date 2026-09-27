@@ -87,6 +87,14 @@ async function request(token: string, method: string, path: string, body?: unkno
     throw new GistError('Offline — will retry.');
   }
   if (res.ok) return res.json();
+  // GitHub reports primary and secondary rate limits as 403 (or 429).
+  if (res.status === 403 || res.status === 429) {
+    const body = await res.clone().text().catch(() => '');
+    if (res.status === 429 || res.headers.get('x-ratelimit-remaining') === '0' ||
+        res.headers.has('retry-after') || /rate limit/i.test(body)) {
+      throw new GistError('GitHub rate limit — will retry.', 429);
+    }
+  }
   if (res.status === 401) throw new GistError('Token rejected — check it or make a new one.', 401);
   if (res.status === 403 || res.status === 404) {
     throw new GistError(

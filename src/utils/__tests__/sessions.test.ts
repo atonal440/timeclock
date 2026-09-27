@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { placeSession, mergeEntries, calcSessions, fmtAgo, addDays, daysBetween, type Entry } from '../timeclock';
-import { parseGistId, backupFiles, parseBackupJson, isTransient, GistError, JOURNAL_FILE, JSON_FILE } from '../gist';
+import { parseGistId, backupFiles, parseBackupJson, isTransient, updateGist, GistError, JOURNAL_FILE, JSON_FILE } from '../gist';
 
 const at = (h: number, m = 0, day = 1) => new Date(2024, 0, day, h, m);
 const iso = (h: number, m = 0, day = 1) => at(h, m, day).toISOString();
@@ -61,6 +61,11 @@ describe('placeSession', () => {
     expect(sessions[2].broken).toBeUndefined();
     const next = ok(placeSession(bad, { account: 'C', start: at(15), end: at(16) }, undefined, NOW));
     expect(calcSessions(next).at(-1)).toMatchObject({ account: 'C', ms: 3600000 });
+    // A new session may end at its clock-in, but not contain it.
+    expect(placeSession(bad, { account: 'C', start: at(10, 30), end: at(12) }, undefined, NOW)).toHaveProperty('error');
+    expect(placeSession(bad, { account: 'C', start: at(11), end: at(12) }, undefined, NOW)).toHaveProperty('error');
+    const before = ok(placeSession(bad, { account: 'C', start: at(10, 30), end: at(11) }, undefined, NOW));
+    expect(before.map(e => e.datetime)).toEqual([...before.map(e => e.datetime)].sort());
     // Fixing it gives it a clock-out in place.
     const fixed = ok(placeSession(bad, { account: 'work', start: at(11), end: at(12) }, { inIdx: 2, outIdx: null }, NOW));
     expect(calcSessions(fixed).map(s => [s.account, s.ms, !!s.broken])).toEqual([
@@ -171,6 +176,26 @@ describe('gist helpers', () => {
       { type: 'i', datetime: t, account: 'A' },
     ] }));
     expect(parsed.entries).toEqual([{ type: 'i', datetime: t, account: 'A' }]);
+  });
+
+  describe('rate limits', () => {
+    afterEach(() => vi.unstubAllGlobals());
+    const reject = async (res: Response) => {
+      vi.stubGlobal('fetch', vi.fn(async () => res));
+      return updateGist('t', 'id', {}).then(() => null, (e: unknown) => e);
+    };
+
+    it('treats rate-limit 403s as transient', async () => {
+      expect(isTransient(await reject(new Response('{"message":"You have exceeded a secondary rate limit."}', { status: 403 })))).toBe(true);
+      expect(isTransient(await reject(new Response('{}', { status: 403, headers: { 'x-ratelimit-remaining': '0' } })))).toBe(true);
+      expect(isTransient(await reject(new Response('{}', { status: 429 })))).toBe(true);
+    });
+
+    it('treats other 403s as permanent', async () => {
+      const e = await reject(new Response('{"message":"Resource not accessible by personal access token"}', { status: 403 }));
+      expect(e).toBeInstanceOf(GistError);
+      expect(isTransient(e)).toBe(false);
+    });
   });
 
   it('only retries transient errors', () => {
