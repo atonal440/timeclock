@@ -53,6 +53,21 @@ describe('placeSession', () => {
     expect(calcSessions(next).at(-1)).toMatchObject({ account: 'R', endDt: null });
   });
 
+  it("doesn't let a clock-in missing its clock-out block new sessions", () => {
+    // 'work' at 11:00 was never clocked out; 'B' at 13:00 starts regardless.
+    const bad: Entry[] = [...base.slice(0, 2), { type: 'i', datetime: iso(11), account: 'work' }, ...base.slice(2)];
+    const sessions = calcSessions(bad);
+    expect(sessions[1]).toMatchObject({ account: 'work', endDt: null, broken: true });
+    expect(sessions[2].broken).toBeUndefined();
+    const next = ok(placeSession(bad, { account: 'C', start: at(15), end: at(16) }, undefined, NOW));
+    expect(calcSessions(next).at(-1)).toMatchObject({ account: 'C', ms: 3600000 });
+    // Fixing it gives it a clock-out in place.
+    const fixed = ok(placeSession(bad, { account: 'work', start: at(11), end: at(12) }, { inIdx: 2, outIdx: null }, NOW));
+    expect(calcSessions(fixed).map(s => [s.account, s.ms, !!s.broken])).toEqual([
+      ['A', 3600000, false], ['work', 3600000, false], ['B', 3600000, false],
+    ]);
+  });
+
   it('moves an edited session to another day and across midnight', () => {
     const next = ok(placeSession(base, { account: 'A', start: at(22, 0, 3), end: at(1, 0, 4) }, { inIdx: 0, outIdx: 1 }, NOW));
     const sessions = calcSessions(next);

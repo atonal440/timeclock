@@ -9,12 +9,26 @@ interface LogTabProps {
 }
 
 export function LogTab({ days, openEdit, openAdd, deleteSession }: LogTabProps) {
+  const broken = days.flatMap(d => d.sessions.filter(s => s.broken));
   return (
     <>
       <div className="section-head">
         <div className="section-label" style={{ marginTop: 4 }}>Sessions</div>
         <button className="add-entry-btn" onClick={openAdd}>＋ Add entry</button>
       </div>
+      {broken.length > 0 && (
+        <div className="broken-notice" role="note">
+          <div className="broken-notice-title">
+            {broken.length === 1 ? '1 session is' : `${broken.length} sessions are`} missing a clock-out
+          </div>
+          {broken.map(s => (
+            <div key={s.inIdx} className="broken-notice-row">
+              <span>{fmtDate(s.date)} · {fmtTime(s.startDt)} · {s.account}</span>
+              <button className="nudge-btn primary" onClick={() => openEdit(s)}>Fix</button>
+            </div>
+          ))}
+        </div>
+      )}
       {days.length === 0 ? (
         <div className="empty-state">
           <span className="icon">📋</span>
@@ -29,13 +43,15 @@ export function LogTab({ days, openEdit, openAdd, deleteSession }: LogTabProps) 
             </div>
             <div className="day-rows">
               {day.sessions.map((s, si) => (
-                <div key={si} className="day-row">
+                <div key={si} className={`day-row ${s.broken ? 'broken' : ''}`}>
                   <div className="day-row-left">
                     <div className="day-row-account">{s.account}</div>
                     <div className="day-row-times">
                       {s.endDt
                         ? `${fmtTime(s.startDt)} → ${fmtTime(s.endDt)}`
-                        : `${fmtTime(s.startDt)} → now`}
+                        : s.broken
+                          ? `${fmtTime(s.startDt)} → ? · no clock-out`
+                          : `${fmtTime(s.startDt)} → now`}
                     </div>
                   </div>
                   <div className="day-row-right">

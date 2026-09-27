@@ -82,6 +82,36 @@ test('editing a multi-day session keeps its end date', async ({ page }) => {
   await expect(page.locator('.day-card', { hasText: 'Mar 1' }).locator('.day-total')).toHaveText('25h 00m');
 });
 
+test('a clock-in missing its clock-out is flagged, fixable, and does not block entries', async ({ page }) => {
+  await seed(page, { ...PROJECTS, 'tc-entries': [
+    { type: 'i', datetime: new Date(2024, 2, 5, 14, 12).toISOString(), account: 'work' },
+    { type: 'i', datetime: new Date(2024, 2, 5, 15, 0).toISOString(), account: 'Garden' },
+    { type: 'o', datetime: new Date(2024, 2, 5, 16, 0).toISOString() },
+  ] });
+  await page.goto('/');
+  await expect(page.locator('.status-idle')).toBeVisible();
+  await page.locator('.nav-btn', { hasText: 'Log' }).click();
+  await expect(page.locator('.broken-notice')).toContainText('1 session is missing a clock-out');
+  await expect(page.locator('.day-row.broken')).toContainText('no clock-out');
+
+  // Adding a later entry isn't blocked by it.
+  await page.getByRole('button', { name: /Add entry/ }).click();
+  await page.locator('#edit-account').selectOption('Garden');
+  await page.locator('#edit-date').fill('2024-03-06');
+  await page.locator('#edit-end-date').fill('2024-03-06');
+  await page.locator('#edit-start-time').fill('09:00');
+  await page.locator('#edit-end-time').fill('10:00');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('.modal')).toHaveCount(0);
+
+  // Fix suggests the next entry's start as the clock-out.
+  await page.locator('.broken-notice').getByRole('button', { name: 'Fix' }).click();
+  await expect(page.locator('#edit-end-time')).toHaveValue('15:00');
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.locator('.broken-notice')).toHaveCount(0);
+  await expect(page.locator('.day-card', { hasText: 'Mar 5' }).locator('.day-total')).toHaveText('1h 48m');
+});
+
 test('delete and clock-in can be undone', async ({ page }) => {
   await seed(page, { ...PROJECTS, 'tc-entries': [
     { type: 'i', datetime: '2024-03-05T09:00:00.000Z', account: 'Garden' },

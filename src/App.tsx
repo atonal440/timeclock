@@ -192,14 +192,21 @@ export function App() {
   }
 
   function openEdit(s: SessionData) {
+    // A session missing its clock-out gets one suggested: when the next
+    // entry starts, or an hour after it began.
+    let endDt = s.endDt;
+    if (s.broken) {
+      const next = new Date(entries[s.inIdx + 1].datetime);
+      endDt = next > s.startDt ? next : new Date(s.startDt.getTime() + 3600_000);
+    }
     setDraft({
       inIdx: s.inIdx,
       outIdx: s.outIdx,
       account: s.account,
       date: s.date,
       startTime: fmtInputTime(s.startDt),
-      endDate: s.endDt ? s.endDt.toLocaleDateString('en-CA') : null,
-      endTime: s.endDt ? fmtInputTime(s.endDt) : null
+      endDate: endDt ? endDt.toLocaleDateString('en-CA') : null,
+      endTime: endDt ? fmtInputTime(endDt) : null
     });
   }
 

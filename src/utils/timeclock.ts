@@ -12,6 +12,8 @@ export interface SessionData {
   endDt: Date | null;
   ms: number | null;
   date: string;
+  /** A clock-in with no clock-out that isn't the latest entry (bad import or old edit). */
+  broken?: boolean;
 }
 
 export interface DayData {
@@ -90,7 +92,10 @@ export function calcSessions(entries: Entry[]): SessionData[] {
     const next = entries[i + 1];
     const startDt = new Date(e.datetime);
     if (!next || next.type !== 'o') {
-      sessions.push({ inIdx: i, outIdx: null, account: e.account as string, startDt, endDt: null, ms: null, date: startDt.toLocaleDateString('en-CA') });
+      // Only the very last entry can be a running session; an earlier
+      // unpaired clock-in is missing its clock-out.
+      sessions.push({ inIdx: i, outIdx: null, account: e.account as string, startDt, endDt: null, ms: null, date: startDt.toLocaleDateString('en-CA'),
+        ...(next ? { broken: true } : {}) });
     } else {
       const endDt = new Date(next.datetime);
       sessions.push({ inIdx: i, outIdx: i + 1, account: e.account as string, startDt, endDt, ms: endDt.getTime() - startDt.getTime(), date: startDt.toLocaleDateString('en-CA') });
@@ -130,11 +135,14 @@ export function placeSession(
     : [...entries];
 
   for (const o of calcSessions(rest)) {
+    // A broken session has no known end, so it can't be overlapped.
+    if (o.broken) continue;
     const oStart = o.startDt.getTime();
     const oEnd = o.endDt?.getTime() ?? Infinity;
     const end = endMs ?? Infinity;
     if (startMs < oEnd && end > oStart) {
-      return { error: `Overlaps ${o.account} (${fmtTime(o.startDt)}–${o.endDt ? fmtTime(o.endDt) : 'now'}).` };
+      const day = o.startDt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return { error: `Overlaps ${o.account} (${day}, ${fmtTime(o.startDt)}–${o.endDt ? fmtTime(o.endDt) : 'now'}).` };
     }
   }
 
