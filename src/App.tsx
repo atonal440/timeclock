@@ -33,7 +33,8 @@ interface BackupInfo {
 
 interface ToastState {
   msg: string;
-  undo?: () => void;
+  /** Log to put back on Undo; only offered while the log is still `after`. */
+  undo?: { before: Entry[]; after: Entry[] };
 }
 
 interface ModalState {
@@ -145,7 +146,7 @@ export function App() {
   const todayDay = days.find(d => d.date === todayKey);
   const todayMs = todayDay ? todayDay.totalMs + (isClockedIn ? runningMs : 0) : (isClockedIn ? runningMs : 0);
 
-  function showToast(msg: string, undo?: () => void) {
+  function showToast(msg: string, undo?: ToastState['undo']) {
     clearTimeout(toastTimer.current);
     setToast({ msg, undo });
     toastTimer.current = setTimeout(() => setToast(null), undo ? 5000 : 2500);
@@ -153,9 +154,19 @@ export function App() {
 
   /** Replace the log and offer to put the previous one back. */
   function commit(next: Entry[], msg: string) {
-    const before = entries;
+    showToast(msg, { before: entries, after: next });
     setEntries(next);
-    showToast(msg, () => { setEntries(before); showToast('Undone'); });
+  }
+
+  // Undo restores the whole log, so it's only safe while nothing else (a
+  // rename, import or restore) has changed the log since.
+  const canUndo = !!toast?.undo && entries === toast.undo.after;
+
+  function undo() {
+    if (!toast?.undo) return;
+    const { before, after } = toast.undo;
+    setEntries(cur => cur === after ? before : cur);
+    showToast('Undone');
   }
 
   function clockIn(account: string) {
@@ -402,10 +413,10 @@ export function App() {
       )}
 
       {toast && (
-        <div className={`toast ${toast.undo ? 'has-action' : ''}`} role="status">
+        <div className={`toast ${canUndo ? 'has-action' : ''}`} role="status">
           <span>{toast.msg}</span>
-          {toast.undo && (
-            <button className="toast-action" onClick={() => { toast.undo!(); }}>Undo</button>
+          {canUndo && (
+            <button className="toast-action" onClick={undo}>Undo</button>
           )}
         </div>
       )}

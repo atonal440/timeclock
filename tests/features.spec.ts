@@ -132,6 +132,28 @@ test('delete and clock-in can be undone', async ({ page }) => {
   await expect(page.locator('.day-card')).toHaveCount(1);
 });
 
+test('undo is withdrawn once the log changes some other way', async ({ page }) => {
+  await seed(page, { ...PROJECTS, 'tc-entries': [
+    { type: 'i', datetime: '2024-03-04T09:00:00.000Z', account: 'Acme:Website' },
+    { type: 'o', datetime: '2024-03-04T10:00:00.000Z' },
+    { type: 'i', datetime: '2024-03-05T09:00:00.000Z', account: 'Garden' },
+    { type: 'o', datetime: '2024-03-05T10:00:00.000Z' },
+  ] });
+  await page.goto('/');
+  await page.locator('.nav-btn', { hasText: 'Log' }).click();
+  await page.getByRole('button', { name: 'Delete session' }).first().click();
+  await expect(page.locator('.toast').getByRole('button', { name: 'Undo' })).toBeVisible();
+
+  // Renaming a project rewrites the log; the old snapshot would undo it.
+  await page.locator('.nav-btn', { hasText: 'Projects' }).click();
+  await page.getByRole('button', { name: 'Rename Acme:Website' }).click();
+  await page.getByRole('textbox', { name: 'Rename Acme:Website' }).fill('Acme:Site');
+  await page.getByRole('button', { name: 'Save project name' }).click();
+  await expect(page.locator('.toast').getByRole('button', { name: 'Undo' })).toHaveCount(0);
+  const saved = await entries(page);
+  expect(saved.map((e: { account?: string }) => e.account).filter(Boolean)).toEqual(['Acme:Site']);
+});
+
 test('a session left running overnight prompts to clock out earlier', async ({ page }) => {
   const start = new Date(Date.now() - 14 * 3600_000);
   await seed(page, { ...PROJECTS, 'tc-entries': [{ type: 'i', datetime: start.toISOString(), account: 'Garden' }] });
