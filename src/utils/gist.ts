@@ -60,10 +60,16 @@ export function parseBackupJson(text: string): BackupState {
   const data = JSON.parse(text);
   if (!data || !Array.isArray(data.entries)) throw new GistError(`${JSON_FILE} has no entries.`);
   // Clock-ins need a project name; the UI assumes every session has one.
-  const entries: Entry[] = data.entries.filter((e: Entry) =>
-    e && typeof e.datetime === 'string' && !isNaN(Date.parse(e.datetime)) &&
-    (e.type === 'o' || (e.type === 'i' && typeof e.account === 'string' && e.account.trim() !== ''))
-  );
+  // Timestamps are normalized to ISO: the log is ordered by comparing them
+  // as strings, so a hand-edited "March 5 2024 09:00" would sort wrongly.
+  const entries: Entry[] = data.entries
+    .filter((e: Entry) =>
+      e && typeof e.datetime === 'string' && !isNaN(Date.parse(e.datetime)) &&
+      (e.type === 'o' || (e.type === 'i' && typeof e.account === 'string' && e.account.trim() !== '')))
+    .map((e: Entry): Entry => {
+      const datetime = new Date(e.datetime).toISOString();
+      return e.type === 'i' ? { type: 'i', datetime, account: e.account } : { type: 'o', datetime };
+    });
   const strings = (v: unknown) => Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
   return { entries, projects: strings(data.projects), hiddenProjects: strings(data.hiddenProjects) };
 }

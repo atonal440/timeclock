@@ -77,8 +77,9 @@ export function parseTimeclock(content: string): ParsedTimeclock {
       const named = text.trim();
       const k = named ? open.findLastIndex(o => o.account === named) : open.length - 1;
       if (k === -1) { skipped.push(`${where}: clock-out with no matching clock-in`); return; }
+      // Check before closing it, so a later valid clock-out can still match.
+      if (dt < open[k].start) { skipped.push(`${where}: clock-out before its clock-in (line ${open[k].line})`); return; }
       const [o] = open.splice(k, 1);
-      if (dt < o.start) { skipped.push(`${where}: clock-out before its clock-in (line ${o.line})`); return; }
       sessions.push({ account: o.account, start: o.start, end: dt });
     }
   });

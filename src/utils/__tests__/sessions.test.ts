@@ -209,6 +209,17 @@ describe('gist helpers', () => {
     expect(() => parseBackupJson('{}')).toThrow();
   });
 
+  it('normalizes timestamps to ISO and drops unknown fields', () => {
+    const parsed = parseBackupJson(JSON.stringify({ entries: [
+      { type: 'i', datetime: 'March 5 2024 09:00', account: 'A', extra: 1 },
+      { type: 'o', datetime: '2024-03-05T10:00:00+00:00', account: 'x' },
+    ] }));
+    expect(parsed.entries).toEqual([
+      { type: 'i', datetime: new Date('March 5 2024 09:00').toISOString(), account: 'A' },
+      { type: 'o', datetime: '2024-03-05T10:00:00.000Z' },
+    ]);
+  });
+
   it('drops clock-ins without a project name', () => {
     const t = '2024-01-01T09:00:00.000Z';
     const parsed = parseBackupJson(JSON.stringify({ entries: [

@@ -198,6 +198,12 @@ describe('parseTimeclock', () => {
     expect(skipped).toEqual(['line 1: invalid time', 'line 2: invalid time', 'line 3: invalid date', 'line 4: invalid time']);
   });
 
+  it('keeps a clock-in open after rejecting a clock-out that precedes it', () => {
+    const { entries, skipped } = parseTimeclock('i 2015/03/30 09:00 A\no 2015/03/30 08:00\no 2015/03/30 10:00\n');
+    expect(calcSessions(entries).map(s => [s.account, s.ms])).toEqual([['A', 3600000]]);
+    expect(skipped).toEqual(['line 2: clock-out before its clock-in (line 1)']);
+  });
+
   it('ignores a timezone offset, like hledger', () => {
     expect(parseTimeclock('i 2015/03/30 09:00-0500 A').entries[0].datetime).toBe(at(30, 9));
   });
