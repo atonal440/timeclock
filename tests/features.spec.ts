@@ -210,7 +210,7 @@ test('importing an hledger file drops descriptions and reports overlapping sessi
     'o 2015/04/02 15:00:00 another:account',
   ].join('\n'));
   await page.getByRole('button', { name: 'Import & Merge' }).click();
-  await expect(page.locator('.toast')).toContainText('Imported 2 sessions. Skipped 1: some account at 2015-04-02 13:00: overlaps another session');
+  await expect(page.locator('.toast')).toContainText('Imported 2 sessions. Skipped 1 in the file: some account at 2015-04-02 13:00: overlaps another session.');
   const accounts = (await entries(page)).map((e: { account?: string }) => e.account).filter(Boolean);
   expect(accounts).toEqual(['some account', 'another:account']);
 });
@@ -296,7 +296,7 @@ test('connecting to an existing gist merges its data first', async ({ page }) =>
   await page.getByLabel('Existing gist URL or ID').fill('https://gist.github.com/me/abc123def456abc123def456');
   await page.getByRole('button', { name: 'Connect & restore' }).click();
 
-  await expect(page.locator('.toast')).toContainText('Restored 2 entries');
+  await expect(page.locator('.toast')).toContainText('Restored 1 session from Gist');
   expect(await entries(page)).toEqual(remote.entries);
   await page.locator('.nav-btn', { hasText: 'Clock' }).click();
   await expect(page.locator('.project-btn', { hasText: 'Remote:Job' })).toBeVisible();

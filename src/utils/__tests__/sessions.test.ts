@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { placeSession, mergeEntries, calcSessions, fmtAgo, addDays, daysBetween, type Entry } from '../timeclock';
+import { placeSession, mergeEntries, mergeLog, calcSessions, fmtAgo, addDays, daysBetween, type Entry } from '../timeclock';
 import { parseGistId, backupFiles, parseBackupJson, isTransient, updateGist, GistError, JOURNAL_FILE, JSON_FILE } from '../gist';
 
 const at = (h: number, m = 0, day = 1) => new Date(2024, 0, day, h, m);
@@ -66,6 +66,10 @@ describe('placeSession', () => {
     expect(placeSession(bad, { account: 'C', start: at(11), end: at(12) }, undefined, NOW)).toHaveProperty('error');
     const before = ok(placeSession(bad, { account: 'C', start: at(10, 30), end: at(11) }, undefined, NOW));
     expect(before.map(e => e.datetime)).toEqual([...before.map(e => e.datetime)].sort());
+    // Stray clock-outs inside a new session are dropped so pairs stay intact.
+    const withStray: Entry[] = [...base, { type: 'o', datetime: iso(16) }];
+    const placed = ok(placeSession(withStray, { account: 'C', start: at(15), end: at(17) }, undefined, NOW));
+    expect(placed.slice(4)).toEqual([{ type: 'i', datetime: iso(15), account: 'C' }, { type: 'o', datetime: iso(17) }]);
     // Fixing it gives it a clock-out in place.
     const fixed = ok(placeSession(bad, { account: 'work', start: at(11), end: at(12) }, { inIdx: 2, outIdx: null }, NOW));
     expect(calcSessions(fixed).map(s => [s.account, s.ms, !!s.broken])).toEqual([
@@ -132,6 +136,42 @@ describe('mergeEntries', () => {
     expect(mergeEntries(list, [])).toEqual(list);
     const zero: Entry[] = [{ type: 'i', datetime: iso(12), account: 'Z' }, { type: 'o', datetime: iso(12) }];
     expect(calcSessions(mergeEntries(base, zero)).map(s => s.account)).toEqual(['A', 'Z', 'B']);
+  });
+});
+
+describe('mergeLog', () => {
+  const s = (acct: string, h1: number, h2: number): Entry[] =>
+    [{ type: 'i', datetime: iso(h1), account: acct }, { type: 'o', datetime: iso(h2) }];
+
+  it('skips incoming sessions that overlap existing ones instead of interleaving', () => {
+    const r = mergeLog(s('A', 9, 11), [...s('B', 10, 12), ...s('C', 12, 13)]);
+    expect(calcSessions(r.entries).map(x => [x.account, x.ms, !!x.broken])).toEqual([
+      ['A', 2 * 3600000, false], ['C', 3600000, false],
+    ]);
+    expect(r).toMatchObject({ added: 1, skipped: 1 });
+  });
+
+  it('skips an incoming open clock-in that falls inside an existing session', () => {
+    const r = mergeLog(s('A', 9, 11), [{ type: 'i', datetime: iso(10), account: 'X' }, ...s('C', 12, 13)]);
+    expect(calcSessions(r.entries).map(x => x.account)).toEqual(['A', 'C']);
+    expect(r.skipped).toBe(1);
+  });
+
+  it("treats this device's running session as running until now", () => {
+    const running: Entry[] = [...s('A', 8, 9), { type: 'i', datetime: iso(10), account: 'R' }];
+    const r = mergeLog(running, s('B', 11, 12));
+    expect(r).toMatchObject({ entries: running, added: 0, skipped: 1 });
+    expect(mergeLog(running, s('B', 9, 10)).added).toBe(1);
+  });
+
+  it('drops a local stray clock-out covered by an added session', () => {
+    const stray: Entry[] = [...s('A', 8, 9), { type: 'o', datetime: iso(11) }];
+    const r = mergeLog(stray, s('B', 10, 12));
+    expect(r.entries).toEqual([...s('A', 8, 9), ...s('B', 10, 12)]);
+  });
+
+  it('skips duplicates silently', () => {
+    expect(mergeLog(base, base)).toMatchObject({ entries: base, added: 0, skipped: 0 });
   });
 });
 

@@ -113,7 +113,7 @@ PR builds are served at `<site>/pr-preview/pr-<N>/`, on the same origin as the l
 - `exportTimeclock(entries)` — serializes `Entry[]` to hledger timeclock format; a clock-in missing its clock-out (other than the running one) or a clock-out with no clock-in is written as a `;` comment line
 - `exportCsv(sessions)` — serializes `SessionData[]` to CSV (Date, Project, Start, End, Hours; local time, one row per session)
 - `placeSession(entries, session, replace?)` — adds or moves a session, keeping entries in chronological in/out pairs; returns `{ error }` on overlap, backwards or future times. All manual edits go through it.
-- `mergeEntries(prev, incoming)` — union, deduped by `datetime + type` (import and Gist restore)
+- `mergeLog(prev, incoming)` — merges another log a session at a time (import and Gist restore): duplicates (same clock-in time) are skipped, incoming sessions overlapping existing ones are skipped and counted; returns `{ entries, added, skipped }`. `mergeEntries` returns just the entries.
 - `fmtDuration(ms)` — formats milliseconds as `Xh YYm`
 - `fmtDate`, `fmtTime`, `formatTC` — date/time formatters
 
@@ -130,7 +130,7 @@ i YYYY/MM/DD HH:MM Account:Name
 o YYYY/MM/DD HH:MM
 ```
 
-Import merges with existing data; duplicates (same `datetime + type`) are skipped.
+Import merges with existing data via `mergeLog`: duplicates are skipped, and sessions overlapping ones already logged are skipped and reported.
 
 The importer follows hledger 1.50's timeclock rules where it can: comment lines (`#`/`;`/`*`) and `b`/`h`/`O` lines are ignored, descriptions (after 2+ spaces) and `;` comments are dropped, and a clock-out naming an account closes that session (otherwise the most recent open one). hledger allows concurrent sessions but TimeClock tracks one at a time, so a session overlapping an earlier one is skipped and reported; a never-closed clock-in is kept (shown as missing a clock-out unless it's the latest). hledger runs an unclosed clock-in until "now", which is why the export comments such entries out instead.
 

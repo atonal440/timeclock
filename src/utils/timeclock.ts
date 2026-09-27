@@ -58,8 +58,12 @@ export function parseTimeclock(content: string): ParsedTimeclock {
     const m = line.match(ENTRY_LINE);
     if (!m) { skipped.push(`${where}: not a timeclock entry`); return; }
     const [, code, y, mo, d, hh, mm, ss, rest = ''] = m;
+    // Out-of-range parts would silently roll over (09:99 → 10:39).
+    if (+hh > 23 || +mm > 59 || +(ss ?? 0) > 59) { skipped.push(`${where}: invalid time`); return; }
+    const day = new Date(+y, +mo - 1, +d);
+    if (day.getMonth() !== +mo - 1 || day.getDate() !== +d) { skipped.push(`${where}: invalid date`); return; }
+    // A +-ZZZZ offset is ignored, as hledger does: times are local.
     const dt = new Date(+y, +mo - 1, +d, +hh, +mm, +(ss ?? 0));
-    if (isNaN(dt.getTime()) || dt.getMonth() !== +mo - 1) { skipped.push(`${where}: invalid date`); return; }
     const text = rest.split(';')[0];
     if (code === 'i') {
       const account = text.split(/\s{2,}|\t/)[0].trim();
@@ -233,39 +237,85 @@ export function placeSession(
   const inEntry: Entry = { type: 'i', datetime: s.start.toISOString(), account: s.account };
   if (endMs === null) return { entries: [...rest, inEntry] };
 
+  // A clock-out with no clock-in means nothing (the Log ignores it, hledger
+  // rejects it); one inside the new session would pair with our clock-in
+  // later on, so drop it.
+  const startIso = inEntry.datetime, endIso = s.end!.toISOString();
+  const kept = rest.filter((e, k) =>
+    !(e.type === 'o' && rest[k - 1]?.type !== 'i' && e.datetime > startIso && e.datetime < endIso));
+
   // Insert before the first entry after our start; on a tie an 'i' sorts
   // after us (a session may end exactly when the next one starts).
-  const startIso = inEntry.datetime;
-  let pos = rest.findIndex(e => e.datetime > startIso || (e.datetime === startIso && e.type === 'i'));
-  if (pos === -1) pos = rest.length;
-  const next = [...rest];
-  next.splice(pos, 0, inEntry, { type: 'o', datetime: s.end!.toISOString() });
-  return { entries: next };
+  let pos = kept.findIndex(e => e.datetime > startIso || (e.datetime === startIso && e.type === 'i'));
+  if (pos === -1) pos = kept.length;
+  kept.splice(pos, 0, inEntry, { type: 'o', datetime: endIso });
+  return { entries: kept };
+}
+
+interface Block {
+  kind: 'session' | 'open' | 'stray';
+  start: number;
+  end: number;
+  entries: Entry[];
+}
+
+/** Split a log into sessions (i+o), open clock-ins, and stray clock-outs. */
+function toBlocks(list: Entry[]): Block[] {
+  const blocks: Block[] = [];
+  for (let k = 0; k < list.length; k++) {
+    const e = list[k], t = Date.parse(e.datetime), next = list[k + 1];
+    if (e.type === 'i' && next?.type === 'o') {
+      blocks.push({ kind: 'session', start: t, end: Date.parse(next.datetime), entries: [e, next] });
+      k++;
+    } else {
+      blocks.push({ kind: e.type === 'i' ? 'open' : 'stray', start: t, end: t, entries: [e] });
+    }
+  }
+  // The latest entry being a clock-in means it's running: it spans until now.
+  const last = blocks.at(-1);
+  if (last?.kind === 'open' && list.at(-1) === last.entries[0]) {
+    blocks[blocks.length - 1] = { ...last, kind: 'session', end: Infinity };
+  }
+  return blocks;
+}
+
+function clashes(a: Block, b: Block): boolean {
+  if (a.kind === 'stray' || b.kind === 'stray') return false;
+  if (a.start === b.start) return true;
+  if (a.kind === 'session' && b.kind === 'session') return a.start < b.end && a.end > b.start;
+  const [point, other] = a.kind === 'open' ? [a, b] : [b, a];
+  return other.kind === 'session' && point.start > other.start && point.start < other.end;
 }
 
 /**
- * Union of two entry lists, skipping duplicates (same datetime + type), in
- * time order. Each list keeps its own order for equal times (so a valid log
- * is never rearranged); between the two lists, a clock-out goes before a
- * clock-in at the same time, so a session ending exactly when one from the
- * other list starts stays paired.
+ * Merge another log (an import or a Gist backup) into this one, a session
+ * at a time so pairs never interleave. Incoming sessions already present
+ * (same clock-in time) are skipped as duplicates; ones that overlap an
+ * existing session are skipped and counted in `skipped`. Stray clock-outs
+ * in the incoming log are dropped, as are local ones an added session
+ * covers. With nothing to add, `prev` is returned unchanged.
  */
-export function mergeEntries(prev: Entry[], incoming: Entry[]): Entry[] {
-  const byTime = (list: Entry[]) => [...list].sort((a, b) => a.datetime.localeCompare(b.datetime));
-  const existing = new Set(prev.map(e => e.datetime + e.type));
-  const a = byTime(prev);
-  const b = byTime(incoming).filter(e => !existing.has(e.datetime + e.type));
-  // At a tie, a clock-out that closes an earlier clock-in comes first, then
-  // clock-ins, then the clock-out of a zero-length session.
-  const rank = (list: Entry[], k: number) => list[k].type === 'i' ? 1
-    : k > 0 && list[k - 1].type === 'i' && list[k - 1].datetime === list[k].datetime ? 2 : 0;
-  const out: Entry[] = [];
-  let i = 0, j = 0;
-  while (i < a.length && j < b.length) {
-    const c = a[i].datetime.localeCompare(b[j].datetime) || rank(a, i) - rank(b, j);
-    out.push(c <= 0 ? a[i++] : b[j++]);
+export function mergeLog(prev: Entry[], incoming: Entry[]): { entries: Entry[]; added: number; skipped: number } {
+  const local = toBlocks(prev);
+  const have = new Set(prev.map(e => e.datetime + e.type));
+  const accepted: Block[] = [];
+  let skipped = 0;
+  for (const b of toBlocks(incoming)) {
+    if (b.kind === 'stray' || have.has(b.entries[0].datetime + 'i')) continue;
+    if (local.some(o => clashes(b, o)) || accepted.some(o => clashes(b, o))) { skipped++; continue; }
+    accepted.push(b);
   }
-  return out.concat(a.slice(i), b.slice(j));
+  if (!accepted.length) return { entries: prev, added: 0, skipped };
+
+  const covered = (t: number) => accepted.some(a => a.kind === 'session' && t > a.start && t < a.end);
+  const entries = [...local.filter(b => !(b.kind === 'stray' && covered(b.start))), ...accepted]
+    .sort((a, b) => a.start - b.start || a.end - b.end)
+    .flatMap(b => b.entries);
+  return { entries, added: accepted.length, skipped };
+}
+
+export function mergeEntries(prev: Entry[], incoming: Entry[]): Entry[] {
+  return mergeLog(prev, incoming).entries;
 }
 
 /** `YYYY-MM-DD` shifted by whole calendar days (DST-safe). */

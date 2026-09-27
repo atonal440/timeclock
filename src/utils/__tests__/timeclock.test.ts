@@ -192,6 +192,16 @@ describe('parseTimeclock', () => {
     expect(skipped).toEqual(['line 4: not a timeclock entry', 'line 5: clock-out with no matching clock-in']);
   });
 
+  it('skips out-of-range times and dates instead of rolling them over', () => {
+    const { entries, skipped } = parseTimeclock('i 2015/03/30 09:99 A\ni 2015/03/30 25:00 B\ni 2015/02/30 09:00 C\ni 2015/03/30 09:00:61 D\n');
+    expect(entries).toEqual([]);
+    expect(skipped).toEqual(['line 1: invalid time', 'line 2: invalid time', 'line 3: invalid date', 'line 4: invalid time']);
+  });
+
+  it('ignores a timezone offset, like hledger', () => {
+    expect(parseTimeclock('i 2015/03/30 09:00-0500 A').entries[0].datetime).toBe(at(30, 9));
+  });
+
   it('round-trips an export, ignoring commented-out strays', () => {
     const log: Entry[] = [
       { type: 'i', datetime: at(30, 8), account: 'Stray' },

@@ -3,7 +3,7 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { loadData } from './utils/storage';
 import type { Entry, SessionData } from './utils/timeclock';
 import { parseTimeclock, exportTimeclock, exportCsv, fmtDuration, fmtAgo,
-  calcSessions, groupByDay, placeSession, mergeEntries, localDateTime, addDays
+  calcSessions, groupByDay, placeSession, mergeLog, localDateTime, addDays
 } from './utils/timeclock';
 import type { BackupState } from './utils/gist';
 import { useGistSync } from './hooks/useGistSync';
@@ -269,13 +269,19 @@ export function App() {
   function doImport(importText: string): boolean {
     try {
       const { entries: parsed, skipped } = parseTimeclock(importText);
-      const why = skipped.length ? ` Skipped ${skipped.length}: ${skipped[0]}${skipped.length > 1 ? ', …' : ''}` : '';
-      if (!parsed.length) { showToast(`No valid entries found.${why}`); return false; }
-      setEntries(prev => mergeEntries(prev, parsed));
+      if (!parsed.length) {
+        showToast(`No valid entries found.${skipped.length ? ` First problem: ${skipped[0]}` : ''}`);
+        return false;
+      }
+      const merged = mergeLog(entries, parsed);
+      setEntries(merged.entries);
       const accs = parsed.filter(e => e.type === 'i').map(e => e.account!);
       setProjects(prev => Array.from(new Set([...prev, ...accs])));
-      const sessions = parsed.filter(e => e.type === 'i').length;
-      showToast(`Imported ${sessions} session${sessions === 1 ? '' : 's'}.${why}`);
+      const notes = [
+        ...(skipped.length ? [`Skipped ${skipped.length} in the file: ${skipped[0]}${skipped.length > 1 ? ', …' : ''}.`] : []),
+        ...(merged.skipped ? [`Skipped ${merged.skipped} overlapping sessions already logged.`] : []),
+      ];
+      showToast([`Imported ${merged.added} session${merged.added === 1 ? '' : 's'}.`, ...notes].join(' '));
       return true;
     } catch (e) {
       showToast('Parse error: ' + (e instanceof Error ? e.message : String(e)));
@@ -298,12 +304,12 @@ export function App() {
 
   // Merge a gist backup into local data (never removes anything).
   function restoreBackup(remote: BackupState) {
-    const have = new Set(entries.map(e => e.datetime + e.type));
-    const added = remote.entries.filter(e => !have.has(e.datetime + e.type)).length;
-    setEntries(prev => mergeEntries(prev, remote.entries));
+    const { added, skipped } = mergeLog(entries, remote.entries);
+    setEntries(prev => mergeLog(prev, remote.entries).entries);
     setProjects(prev => Array.from(new Set([...prev, ...remote.projects])));
     setHiddenProjects(prev => new Set([...(prev instanceof Set ? prev : prev as unknown as string[]), ...remote.hiddenProjects]));
-    showToast(added ? `Restored ${added} entries from Gist` : 'Already up to date with Gist');
+    const clash = skipped ? ` (${skipped} overlapped sessions here, kept this device's)` : '';
+    showToast(added ? `Restored ${added} session${added === 1 ? '' : 's'} from Gist${clash}` : `Already up to date with Gist${clash}`);
   }
 
   const backupState = useMemo<BackupState>(() => ({
